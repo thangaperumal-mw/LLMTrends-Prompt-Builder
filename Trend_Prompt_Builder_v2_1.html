@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Trend prompt builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --teal: #28BBBB;
+    --teal-medium: #00A7A5;
+    --teal-dark: #1C7070;
+    --teal-tint-1: #A3DFDF;
+    --teal-tint-2: #C0EBEB;
+    --teal-tint-3: #E1EFF0;
+    --gray-bg: #F0F4F4;
+    --ink: #1A1A1A;
+    --ink-soft: #5C6B6B;
+    --line: #D7E6E6;
+    --paper: #FFFFFF;
+    --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    --sans: "Poppins", Arial, Helvetica, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    background: var(--gray-bg);
+    color: var(--ink);
+    padding: 28px 20px 60px;
+  }
+  .wrap { max-width: 940px; margin: 0 auto; }
+
+  .masthead {
+    background: linear-gradient(120deg, var(--teal) 0%, var(--teal-dark) 100%);
+    border-radius: 16px;
+    padding: 28px 32px;
+    color: white;
+    margin-bottom: 22px;
+    position: relative;
+    overflow: hidden;
+  }
+  .eyecon {
+    position: absolute;
+    right: 26px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: 3px solid rgba(255,255,255,0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .eyecon::after {
+    content: "";
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.9);
+  }
+  .masthead h1 {
+    margin: 0 0 5px;
+    font-size: 23px;
+    font-weight: 600;
+    letter-spacing: 0.1px;
+    position: relative;
+  }
+  .masthead p {
+    margin: 0;
+    font-size: 13.5px;
+    color: rgba(255,255,255,0.88);
+    position: relative;
+    max-width: 640px;
+  }
+
+  .panel {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 22px 24px;
+    margin-bottom: 18px;
+    box-shadow: 0 1px 2px rgba(28,112,112,0.05);
+  }
+  .panel h2 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--teal-dark);
+    margin: 0 0 14px;
+    font-weight: 600;
+  }
+
+  .grid3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+  .grid2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    margin-top: 14px;
+  }
+  @media (max-width: 720px) {
+    .grid3, .grid2 { grid-template-columns: 1fr; }
+  }
+
+  label {
+    display: block;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+  label .optional-tag {
+    color: var(--ink-soft);
+    font-weight: 400;
+    font-size: 11.5px;
+  }
+  select, input[type="text"] {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 9px;
+    border: 1.5px solid var(--line);
+    background: var(--paper);
+    font-size: 14px;
+    color: var(--ink);
+    font-family: var(--sans);
+    transition: border-color 0.15s;
+  }
+  select {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%231C7070' stroke-width='2.5'><path d='M6 9l6 6 6-6'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 14px;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+  }
+  select:focus, input[type="text"]:focus {
+    outline: none;
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px rgba(40,187,187,0.18);
+  }
+  input[type="text"]::placeholder { color: #9AAAAA; }
+
+  .badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+  }
+  .badge {
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 13px;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .badge.variant { background: var(--teal-tint-2); color: var(--teal-dark); }
+  .badge.tool { background: var(--teal-tint-3); color: #2B4A4A; }
+
+  .output-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .output-head h2 { margin: 0; }
+  .copy-btn {
+    background: var(--teal);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 9px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    font-family: var(--sans);
+  }
+  .copy-btn:hover { background: var(--teal-medium); }
+  .copy-btn:active { transform: scale(0.97); }
+  .copy-btn.copied { background: var(--teal-dark); }
+
+  pre#promptOut {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.65;
+    white-space: pre-wrap;
+    word-break: break-word;
+    background: #FBFDFD;
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    padding: 18px 20px;
+    max-height: 480px;
+    overflow-y: auto;
+    margin: 0;
+    color: #26313D;
+  }
+
+  .note {
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    margin-top: 12px;
+    line-height: 1.55;
+  }
+  .note strong { color: var(--ink); }
+
+  footer {
+    text-align: center;
+    font-size: 11.5px;
+    color: #8FA0A0;
+    margin-top: 26px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <h1>Trend prompt builder</h1>
+    <p>Pick a platform, category, and location — get the exact prompt to copy and paste. No editing needed.</p>
+    <div class="eyecon"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Selections</h2>
+    <div class="grid3">
+      <div>
+        <label for="platform">Platform</label>
+        <select id="platform"></select>
+      </div>
+      <div>
+        <label for="category">Category</label>
+        <select id="category"></select>
+      </div>
+      <div>
+        <label for="location">Location</label>
+        <select id="location"></select>
+      </div>
+    </div>
+
+    <div class="badges" id="badges"></div>
+  </div>
+
+  <div class="panel" id="promptPanel">
+    <div class="output-head">
+      <h2 id="outHeading">Generated prompt</h2>
+      <button class="copy-btn" id="copyBtn">Copy prompt</button>
+    </div>
+    <pre id="promptOut"></pre>
+    <div class="note" id="promptNote"></div>
+  </div>
+
+  <footer>Trend analysis — channel comparison project · Prompt builder</footer>
+</div>
+
+<script>
+const CATEGORY_TOKENS = [
+"arts_and_entertainment","autos_and_vehicles","beauty_and_fitness","books_and_literature",
+"business_and_industrial","computers_and_electronics","finance","food_and_drink","games","health",
+"hobbies_and_leisure","home_and_garden","internet_and_telecom","jobs_and_education","law_and_government",
+"news","online_communities","people_and_society","pets_and_animals","real_estate","reference","science",
+"shopping","sports","travel"
+];
+
+function formatCategory(token) {
+  return token.split("_").map(w => w.toLowerCase() === "and" ? "and" : (w.charAt(0).toUpperCase() + w.slice(1))).join(" ");
+}
+
+const LOCATIONS = ["All","France","Sweden","Netherlands","Japan","Australia","Germany","United States","Finland","United Kingdom","Canada"];
+
+const PLATFORMS = [
+  { id: "curated_news", label: "Curated News", tool: "Claude / ChatGPT" },
+  { id: "reddit",       label: "Reddit",        tool: "Perplexity" },
+  { id: "facebook",     label: "Facebook",      tool: "Meta AI" },
+  { id: "instagram",    label: "Instagram",     tool: "Meta AI" },
+  { id: "x",            label: "X",             tool: "Grok" },
+  { id: "tiktok",       label: "TikTok",        tool: "TikTok Creative Center" },
+  { id: "google_trends",label: "Google Trends", tool: "trends.google.com" },
+];
+
+// ---------- Prompt templates — verbatim from the user's tweaked LLM_Trend-Comparison_Prompts.md ----------
+
+const CURATED_NEWS_WORLDWIDE = `You are producing a reproducible news-trend extract, not a guess.
+Maximise recall inside the rules below. Do not invent an index-wide total.
+
+TASK: Rank entities in {CATEGORY} by news coverage worldwide
+DATE WINDOW: Last 7 days, including today
+TIMEZONE: {TIMEZONE}
+LANGUAGES TO SEARCH: {LOCAL_LANGUAGES}
+
+Before searching, determine today's date from live information, calculate the exact 7-day window as (today minus 6 days) through today in {TIMEZONE}, and state those calendar dates at the top of the answer.
+If {TIMEZONE} is empty, use UTC and name it in Coverage.
+
+If {LOCAL_LANGUAGES} is empty, search at least English plus:
+Spanish, Portuguese, French, German, Arabic, Hindi or another major South Asian language, and Chinese or Japanese or Korean.
+Also add any other language clearly relevant to {CATEGORY}.
+Name every language actually searched in Coverage.
+
+Category meaning:
+Interpret {CATEGORY} as a Google Trends-style theme. Rank entities that news outlets across countries actually covered inside that theme.
+
+Location rule:
+Do not restrict to one country.
+Do not silently return a US/UK English list.
+A valid worldwide list should include entities whose coverage originated in more than one region when the sample supports it.
+
+Anti-bias rule:
+Use the worldwide scope and {LOCAL_LANGUAGES} to set the corpus.
+Do not use my account location, IP address, interface language, or physical location.
+
+Pass 0 — build a multi-region source list yourself
+Before ranking, identify 12–20 sources spanning multiple regions, including:
+- major outlets in the Americas, Europe, Middle East/Africa, and Asia-Pacific
+- category trade press for {CATEGORY}
+- non-.com domains where possible (.es, .br, .fr, .de, .in, .jp, .ar, .mx, .za, etc.)
+Write the source list in Method. Then search those sources. Do not wait for me to supply outlets.
+
+Three-pass search:
+
+Pass 1 — discover candidates
+Run all of these as separate queries:
+1) {CATEGORY} news in the date window, in English
+2) the same query in each language in LANGUAGES TO SEARCH
+3) {CATEGORY} + date window on regional domains/outlets from Pass 0
+4) event-type queries (awards, launches, releases, matches, festivals, rankings, recalls, openings, deaths)
+Do not use a single English query and call it worldwide.
+Collect 15–25 candidate entities.
+
+Pass 2 — count each candidate regionally
+For each promising candidate, search:
+- local/original name + date window
+- English name + date window
+- name + regional domains/outlets from Pass 0
+Open matching articles. Most of Regional retrieved should come from this pass.
+
+Pass 3 — global/English on-topic coverage
+Search the same entities in major international/English outlets when the article is about that entity in {CATEGORY}.
+Put these in Global retrieved.
+
+Retrieval quota:
+Build a working set of at least 80 qualifying articles if they exist.
+If you retrieve fewer, say how many and why. Do not rank from 10 first-page links.
+
+Eligible articles:
+Count news reports, features, interviews, reviews, recaps, explainers, trade-press stories, and dated newsroom/press articles.
+Local news portals and publisher sites may be counted.
+Do not count Google, Bing, Yahoo, or other search-engine result pages.
+Do not count Wikipedia, social-media posts, search-result snippets, tag pages, stock pages, or search-engine homepages.
+
+What to count:
+Regional retrieved = distinct qualifying articles you inspected that:
+- were published inside the stated 7-day window
+- come from regional/local-language outlets or non-.com country domains
+- name the entity in the headline, lead, or as a repeated subject
+
+Global retrieved = distinct qualifying international/English articles you inspected inside the same window.
+
+Additional headlines seen = extra matching headlines found in search results inside the window that you did not open. Count only real headlines you saw. Do not use a search engine's "About X results" figure.
+
+Article count = Regional retrieved + Global retrieved + Additional headlines seen.
+
+Syndication:
+The same wire story reprinted globally counts as 1.
+An outlet that uses its own headline or adds original local reporting counts as +1.
+
+Do not estimate pages you never saw.
+Do not invent a worldwide index total.
+
+Entity rules:
+Allowed types: Organization, Person, Product, Event, Place, Topic.
+Prefer named entities over vague topics.
+Merge translations and name variants.
+Keep the most widely recognized public name; add a local/original name in parentheses when useful.
+Do not rank countries, cities, or regions as the entity unless that place is itself the cultural/commercial product being covered.
+Do not rank politicians, parties, elections, or legislation. If politics touches a {CATEGORY} story, keep the artist, work, brand, company, event, or venue.
+
+Always write this first:
+1) Coverage: confirm Worldwide; list languages/regions represented; state English-share; state the exact date window used
+2) Method: Pass 0 outlets, queries, entity-name searches, articles inspected, syndication rule used
+3) Limits: languages missed, paywalls, why the set is under 80 if it is
+
+Then return this table:
+
+Rank | Entity Name | Entity Type | Article count | Regions represented | Example outlets | Example article URLs | Driver
+
+Table rules:
+- Article count = Regional retrieved + Global retrieved + Additional headlines seen.
+- Rank by Article count, highest first.
+- Return 10 rows only if 10 entities have evidence. Otherwise return fewer. Do not pad.
+- All count columns must be integers or "not available".
+- Regions represented: regions/countries actually present in the sample, not a claim of complete global coverage.
+- At least 1 in-window article URL per row; 2 when available.
+- Driver: one line on the news event that drove the coverage, not the sampling bias.`;
+
+const CURATED_NEWS_COUNTRY = `You are producing a reproducible news-trend extract, not a guess.
+Maximise recall inside the rules below. Do not invent an index-wide total.
+
+TASK: Rank entities in {CATEGORY} by news coverage in {COUNTRY}
+DATE WINDOW: Last 7 days, including today
+TIMEZONE: {TIMEZONE}
+LANGUAGES TO SEARCH: {LOCAL_LANGUAGES}
+
+Before searching, determine today's date from live information, calculate the exact 7-day window as (today minus 6 days) through today in {TIMEZONE}, and state those calendar dates at the top of the answer.
+If {TIMEZONE} is empty, use the standard national timezone of {COUNTRY} and name it in Coverage.
+
+If {LOCAL_LANGUAGES} is empty, decide the official/primary language(s) of {COUNTRY} and English, then name them in Coverage.
+
+Category meaning:
+Interpret {CATEGORY} as a Google Trends-style theme. Rank entities covered in that theme in connection with {COUNTRY}.
+Do not default to globally famous English-language names unless they were covered in this country corpus.
+
+Anti-bias rule:
+Use {COUNTRY} and {LOCAL_LANGUAGES} to set scope. Do not use my account location, IP address, interface language, or physical location.
+
+Pass 0 — build a local source list yourself
+Before ranking, identify 10–15 sources for this run:
+- major national newspapers and broadcasters in {COUNTRY}
+- widely read digital news sites in {COUNTRY}
+- category trade press for {CATEGORY} in {COUNTRY}
+- country domains such as the ccTLD of {COUNTRY}
+Write the source list in Method. Then search those sources. Do not wait for me to supply outlets.
+
+Three-pass search:
+
+Pass 1 — discover candidates
+Run all of these:
+1) {CATEGORY} + {COUNTRY} + date window, in English
+2) the same query in each local language
+3) {CATEGORY} + date window restricted to that country's domains/outlets from Pass 0
+4) event-type queries (awards, launches, releases, matches, festivals, rankings, recalls, openings, deaths)
+Collect 15–25 candidate entities.
+
+Pass 2 — count each candidate locally
+For each promising candidate, search:
+- local/original name + date window
+- English name + date window
+- name + country domain or a Pass 0 outlet
+Open matching articles. Most of Local retrieved should come from this pass.
+
+Pass 3 — international on-topic coverage
+Search the same entities in major international outlets only when the article is about that {COUNTRY} entity or {COUNTRY}'s {CATEGORY} scene.
+Put these in International retrieved.
+
+Retrieval quota:
+Build a working set of at least 80 qualifying articles if they exist.
+If you retrieve fewer, say how many and why. Do not rank from 10 first-page links.
+
+Eligible articles:
+Count news reports, features, interviews, reviews, recaps, explainers, trade-press stories, and dated newsroom/press articles.
+Local news portals and publisher sites may be counted.
+Do not count Google, Bing, Yahoo, or other search-engine result pages.
+Do not count Wikipedia, social-media posts, search-result snippets, tag pages, stock pages, or search-engine homepages.
+
+What to count:
+Local retrieved = distinct qualifying articles you inspected that:
+- were published inside the stated 7-day window
+- come from outlets in {COUNTRY} or that country's domains
+- name the entity in the headline, lead, or as a repeated subject
+
+International retrieved = distinct qualifying on-topic international articles you inspected inside the same window.
+
+Additional headlines seen = extra matching headlines found in search results inside the window that you did not open. Count only real headlines you saw. Do not use a search engine's "About X results" figure.
+
+Article count = Local retrieved + International retrieved + Additional headlines seen.
+
+Syndication:
+Identical mirrored copies count as 1.
+A local outlet that uses its own headline or adds reporting counts as +1.
+
+Do not estimate pages you never saw.
+Do not invent an index-wide total.
+
+Entity rules:
+Allowed types: Organization, Person, Product, Event, Place, Topic.
+Merge aliases, translations, and transliterations.
+Local/original name first, English in parentheses when useful.
+Do not rank countries, cities, or regions as the entity unless that place is itself the cultural/commercial product being covered.
+Do not rank politicians, parties, elections, or legislation. If politics touches a {CATEGORY} story, keep the artist, work, brand, company, event, or venue.
+
+Always write this first:
+1) Coverage: country, languages, Pass 0 outlets, English-share, exact date window used
+2) Method: queries, entity-name searches, articles inspected, syndication rule used
+3) Limits: paywalls, missed languages, why the set is under 80 if it is
+
+Then return this table:
+
+Rank | Entity Name | Entity Type | Article count | Example outlets | Example article URLs | Driver
+
+Table rules:
+- Article count = Local retrieved + International retrieved + Additional headlines seen.
+- Rank by Article count, highest first.
+- Return 10 rows only if 10 entities have evidence. Otherwise return fewer. Do not pad.
+- All count columns must be integers or "not available".
+- At least 1 in-window article URL per row; 2 when available.
+- Driver: one line on what drove the coverage.`;
+
+const REDDIT_WORLDWIDE = `Search Reddit for discussion of {CATEGORY} worldwide, posted in the last 7
+days (including today). Before doing anything else, determine today's
+actual date, calculate the exact 7-day window that covers (today minus 6
+days) through today, and state that date range at the very top of your
+answer.
+
+IMPORTANT — ignore my location entirely for this task. Do not default to
+English-language or my-region subreddits. Actively search across
+subreddits from multiple regions and languages, using these as starting
+anchors (not an exhaustive list): r/worldnews, r/de (German), r/france
+(French), r/japan (Japanese), r/india (Hindi/English), r/brasil
+(Portuguese), r/mexico (Spanish), r/unitedkingdom, r/canada, r/sweden
+(Swedish), r/finland (Finnish), r/netherlands (Dutch), plus the relevant
+category-specific subreddit in each language/region where one exists.
+
+When you find an entity that trends primarily in a non-English-language
+subreddit, report its name in its ORIGINAL script/language, with an
+English translation in parentheses if helpful. Do not silently anglicize
+or translate-only an entity name.
+
+Identify the 10 entities most discussed within your stated 7-day window,
+across the subreddits and languages above. Do not include posts from
+before that window, even if highly relevant — exclude them and move to the
+next entity instead.
+
+Do not restrict the list to any particular kind of entity — include whatever
+appears, whether that is an organisation, a person, a product, an event, a
+place or a topic.
+
+For each entity, run a dedicated search for that entity's name together
+with {CATEGORY} and your stated 7-day window, then report in a numbered
+table with these exact columns:
+Rank | Entity Name (original script + English translation if non-English) |
+Entity Type (Organization / Person / Product / Event / Place / Topic) |
+Engagement Found (upvotes + comments YOUR SEARCH actually returned for this
+entity within the stated window — not an estimate, just what you found) |
+Subreddit(s) (r/...) + thread link, if you can identify them | Driver (one
+line on what drove the discussion)
+
+ALWAYS return 10 entities, ranked by Engagement Found, highest first. Only
+write "not available" if your search for that entity returns zero results
+within the stated window. If your final list still skews heavily toward
+one region, language, or English-language subreddits despite the above,
+say so explicitly at the top of your answer.`;
+
+const REDDIT_COUNTRY = `Search Reddit for discussion of {CATEGORY} relevant to {COUNTRY}, posted in
+the last 7 days (including today). Before doing anything else, determine
+today's actual date, calculate the exact 7-day window that covers (today
+minus 6 days) through today, and state that date range at the very top of
+your answer.
+
+IMPORTANT — focus specifically on {COUNTRY}. Use this language mapping to
+decide which language(s) to search in — do not guess, use exactly this
+table:
+
+France            -> French
+Sweden            -> Swedish
+Netherlands       -> Dutch
+Japan             -> Japanese
+Australia         -> English
+Germany           -> German
+United States     -> English
+Finland           -> Finnish AND Swedish (both official — search both)
+United Kingdom    -> English
+Canada            -> English AND French (both official — search both)
+
+If {COUNTRY} is not in this list, determine its official primary
+language(s) yourself before searching.
+
+Reddit is organised by subreddit, not by country — search {COUNTRY}'s
+national subreddit (e.g. r/france, r/germany) AND relevant
+language-specific subreddits in {COUNTRY}'s own language(s) from the table
+above, not just English-language or global subreddits that merely mention
+{COUNTRY}. For Finland and Canada specifically, search subreddits in EACH
+of their two official languages — do not pick only one.
+
+When you find an entity that trends primarily in a native-language
+subreddit, report its name in its ORIGINAL script/language, with an
+English translation in parentheses if helpful.
+
+Identify the 10 entities most discussed within your stated 7-day window,
+relevant to {COUNTRY}. Do not include posts from before that window, even
+if highly relevant — exclude them and move to the next entity instead.
+
+Do not restrict the list to any particular kind of entity — include whatever
+appears, whether that is an organisation, a person, a product, an event, a
+place or a topic.
+
+For each entity, run a dedicated search for that entity's name together
+with {CATEGORY} and your stated 7-day window, then report in a numbered
+table with these exact columns:
+Rank | Entity Name (original script + English translation if non-English) |
+Entity Type (Organization / Person / Product / Event / Place / Topic) |
+Engagement Found (upvotes + comments YOUR SEARCH actually returned for this
+entity within the stated window — not an estimate, just what you found) |
+Subreddit(s) (r/...) + thread link, if you can identify them | Driver (one
+line on what drove the discussion)
+
+ALWAYS return 10 entities, ranked by Engagement Found, highest first. Only
+write "not available" if your search for that entity returns zero results
+within the stated window.
+
+If you cannot isolate {COUNTRY}, or results skew heavily toward English-
+language subreddits despite the above, say so explicitly at the top of
+your answer and state what scope your answer actually covers.`;
+
+const META_WORLDWIDE = `Search for {PLATFORM} activity related to {CATEGORY} worldwide, from the
+last 7 days (including today). ({PLATFORM} = Facebook or Instagram —
+answer for that one only, run twice for both.) Before doing anything else,
+determine today's actual date, calculate the exact 7-day window that
+covers (today minus 6 days) through today, and state that date range at
+the very top of your answer.
+
+IMPORTANT — ignore my location entirely for this task. Do not default to
+English-language or my-region Pages/Accounts. Actively check major public
+Pages/Accounts across multiple regions and languages — e.g. English (BBC
+News), French (Le Monde), German (Tagesschau), Japanese (NHK), Portuguese
+(Globo), Spanish (Univision) — as starting anchors, not an exhaustive
+list, plus category-relevant accounts in each language/region.
+
+When you find an entity that trends primarily on a non-English-language
+Page/Account, report its name in its ORIGINAL script/language, with an
+English translation in parentheses if helpful.
+
+Identify the 10 entities with the most engagement within your stated 7-day
+window, across the regions and languages above. Do not include posts from
+before that window, even if highly relevant — exclude them and move to the
+next entity instead.
+
+Do not restrict the list to any particular kind of entity — include whatever
+appears, whether that is an organisation, a person, a product, an event, a
+place or a topic.
+
+For each entity, run a dedicated search for that entity's name together
+with {CATEGORY} and your stated 7-day window, then report in a numbered
+table with these exact columns:
+Rank | Entity Name (original script + English translation if non-English) |
+Entity Type (Organization / Person / Product / Event / Place / Topic) |
+Engagement Found (reactions + comments + shares for Facebook; likes +
+comments + reel views for Instagram — YOUR SEARCH actually returned for
+this entity, not an estimate) | Page(s)/Account(s) (name or @handle, noting
+region/language) | Driver (one line on what drove the engagement)
+
+ALWAYS return 10 entities, ranked by Engagement Found, highest first. Only
+write "not available" if your search for that entity returns zero results
+within the stated window. If your final list still skews heavily toward
+one region or English-language accounts despite the above, say so
+explicitly at the top of your answer.
+
+[Caveat to log in Analyst Notes: Meta AI's access to genuine internal FB/IG
+trending data is unverified — treat results as lower-confidence until the
+pilot batch validates them.]`;
+
+const META_COUNTRY = `Search for {PLATFORM} activity related to {CATEGORY} in {COUNTRY}, from
+the last 7 days (including today). ({PLATFORM} = Facebook or Instagram —
+answer for that one only, run twice for both.) Before doing anything else,
+determine today's actual date, calculate the exact 7-day window that
+covers (today minus 6 days) through today, and state that date range at
+the very top of your answer.
+
+IMPORTANT — focus specifically on {COUNTRY}. Use this language mapping to
+decide which language(s) to search in — do not guess, use exactly this
+table:
+
+France            -> French
+Sweden            -> Swedish
+Netherlands       -> Dutch
+Japan             -> Japanese
+Australia         -> English
+Germany           -> German
+United States     -> English
+Finland           -> Finnish AND Swedish (both official — search both)
+United Kingdom    -> English
+Canada            -> English AND French (both official — search both)
+
+If {COUNTRY} is not in this list, determine its official primary
+language(s) yourself before searching.
+
+Actively include Pages/Accounts native to {COUNTRY} in {COUNTRY}'s own
+language(s) from the table above, not just English-language or
+international accounts that merely mention {COUNTRY}. For Finland and
+Canada specifically, check accounts in EACH of their two official
+languages — do not pick only one.
+
+When you find an entity that trends primarily on a native-language
+Page/Account, report its name in its ORIGINAL script/language, with an
+English translation in parentheses if helpful.
+
+Identify the 10 entities with the most engagement within your stated 7-day
+window, from {COUNTRY}. Do not include posts from before that window, even
+if highly relevant — exclude them and move to the next entity instead.
+
+Do not restrict the list to any particular kind of entity — include whatever
+appears, whether that is an organisation, a person, a product, an event, a
+place or a topic.
+
+For each entity, run a dedicated search for that entity's name together
+with {CATEGORY} and your stated 7-day window, then report in a numbered
+table with these exact columns:
+Rank | Entity Name (original script + English translation if non-English) |
+Entity Type (Organization / Person / Product / Event / Place / Topic) |
+Engagement Found (reactions + comments + shares for Facebook; likes +
+comments + reel views for Instagram — YOUR SEARCH actually returned for
+this entity, not an estimate) | Page(s)/Account(s) (name or @handle, noting
+native-language vs English) | Driver (one line on what drove the
+engagement)
+
+ALWAYS return 10 entities, ranked by Engagement Found, highest first. Only
+write "not available" if your search for that entity returns zero results
+within the stated window.
+
+If you cannot isolate {COUNTRY}, or results skew heavily toward English-
+language accounts despite the above, say so explicitly at the top of your
+answer and state what scope your answer actually covers.
+
+[Caveat to log in Analyst Notes: Meta AI's access to genuine internal FB/IG
+trending data is unverified — treat results as lower-confidence until the
+pilot batch validates them.]`;
+
+const GROK_WORLDWIDE = `Using your access to live X (Twitter) activity, identify the 10 entities
+in {CATEGORY} that X users worldwide engaged with most in the last 7 days
+(including today). Before doing anything else, determine today's actual
+date, calculate the exact 7-day window that covers (today minus 6 days)
+through today, and state that date range at the very top of your answer.
+
+IMPORTANT — ignore my location entirely for this task. Do not default to
+English-language or my-region posts. Actively check activity across
+multiple regions and languages — e.g. English, French, German, Japanese,
+Portuguese, Spanish, Hindi, Arabic — as starting anchors, not an
+exhaustive list, so no single region or language dominates by default.
+
+When you find an entity that trends primarily in a non-English-language
+post, report its name in its ORIGINAL script/language, with an English
+translation in parentheses if helpful.
+
+Identify the 10 entities with the most engagement within your stated
+7-day window, across the regions and languages above. Do not include posts
+from before that window, even if highly relevant — exclude them and move
+to the next entity instead.
+
+Do not restrict the list to any particular kind of entity — include whatever
+appears, whether that is an organisation, a person, a product, an event, a
+place or a topic.
+
+For each entity, report in a numbered table with these exact columns:
+Rank | Entity Name (original script + English translation if non-English) |
+Entity Type (Organization / Person / Product / Event / Place / Topic) |
+Engagement Found (likes + reposts + replies YOUR SEARCH actually returned
+for this entity within the stated window — not an estimate) | Example post
+link(s) or handle(s), noting region/language, if you can identify them |
+Driver (one line on what drove the activity)
+
+ALWAYS return 10 entities, ranked by Engagement Found, highest first. Only
+write "not available" if your search for that entity returns zero results
+within the stated window. If your final list still skews heavily toward
+one region or English-language posts despite the above, say so explicitly
+at the top of your answer.`;
+
+const GROK_COUNTRY = `Using your access to live X (Twitter) activity, identify the 10 entities
+in {CATEGORY} that X users in {COUNTRY} engaged with most in the last 7
+days (including today). Before doing anything else, determine today's
+actual date, calculate the exact 7-day window that covers (today minus 6
+days) through today, and state that date range at the very top of your
+answer.
+
+IMPORTANT — focus specifically on {COUNTRY}. Use this language mapping to
+decide which language(s) to search in — do not guess, use exactly this
+table:
+
+France            -> French
+Sweden            -> Swedish
+Netherlands       -> Dutch
+Japan             -> Japanese
+Australia         -> English
+Germany           -> German
+United States     -> English
+Finland           -> Finnish AND Swedish (both official — search both)
+United Kingdom    -> English
+Canada            -> English AND French (both official — search both)
+
+If {COUNTRY} is not in this list, determine its official primary
+language(s) yourself before searching.
+
+Actively include posts in {COUNTRY}'s own language(s) from the table
+above, not just English-language posts that merely mention {COUNTRY}. For
+Finland and Canada specifically, check posts in EACH of their two official
+languages — do not pick only one.
+
+When you find an entity that trends primarily in a native-language post,
+report its name in its ORIGINAL script/language, with an English
+translation in parentheses if helpful.
+
+Identify the 10 entities with the most engagement within your stated
+7-day window, from {COUNTRY}. Do not include posts from before that
+window, even if highly relevant — exclude them and move to the next entity
+instead.
+
+Do not restrict the list to any particular kind of entity — include whatever
+appears, whether that is an organisation, a person, a product, an event, a
+place or a topic.
+
+For each entity, report in a numbered table with these exact columns:
+Rank | Entity Name (original script + English translation if non-English) |
+Entity Type (Organization / Person / Product / Event / Place / Topic) |
+Engagement Found (likes + reposts + replies YOUR SEARCH actually returned
+for this entity within the stated window — not an estimate) | Example post
+link(s) or handle(s), noting native-language vs English, if you can
+identify them | Driver (one line on what drove the activity)
+
+ALWAYS return 10 entities, ranked by Engagement Found, highest first. Only
+write "not available" if your search for that entity returns zero results
+within the stated window.
+
+If you cannot isolate {COUNTRY} or that date range from X's own location/
+engagement signals, or results skew heavily toward English-language posts
+despite the above, say so explicitly at the top of your answer and state
+what scope your answer actually covers.`;
+
+const TIKTOK_STATIC = `No mainstream LLM (Claude, ChatGPT, Grok, Meta AI, Perplexity) has a
+verified data partnership with TikTok. Two options, in order of
+preference:
+
+1. PREFERRED: Use TikTok Creative Center (free, first-party, non-LLM) as
+   the comparison source instead of an LLM. It's not an LLM answer, but
+   it's genuine TikTok data — arguably more useful here than a guess.
+
+2. If an LLM answer is still wanted for consistency: run the same prompt
+   style as the X/Grok prompt (worldwide or country-specific, as needed)
+   through Claude or ChatGPT with web search on, but label every result
+   "Low confidence — no platform data access" in Analyst Notes, and don't
+   use it to draw conclusions on its own.`;
+
+const GOOGLE_TRENDS_STATIC = `Google Trends is itself free, public, first-party data at
+trends.google.com. Pull it directly rather than asking any LLM to
+approximate it — there's no accuracy gain from routing it through a
+model. Google Trends supports both "Worldwide" and per-country location
+filters natively, so no prompt is needed for either variant — just set the
+location filter on the site itself to match what you selected above.`;
+
+// ---------- Populate dropdowns ----------
+function fillSelectPlain(id, items) {
+  const el = document.getElementById(id);
+  el.innerHTML = "";
+  items.forEach(item => {
+    const opt = document.createElement("option");
+    opt.value = item;
+    opt.textContent = item;
+    el.appendChild(opt);
+  });
+}
+function fillSelectCategories(id, tokens) {
+  const el = document.getElementById(id);
+  el.innerHTML = "";
+  tokens.forEach(token => {
+    const opt = document.createElement("option");
+    opt.value = formatCategory(token);
+    opt.textContent = formatCategory(token);
+    el.appendChild(opt);
+  });
+}
+function fillSelectPlatforms(id, items) {
+  const el = document.getElementById(id);
+  el.innerHTML = "";
+  items.forEach(item => {
+    const opt = document.createElement("option");
+    opt.value = item.id;
+    opt.textContent = item.label;
+    el.appendChild(opt);
+  });
+}
+fillSelectPlatforms("platform", PLATFORMS);
+fillSelectCategories("category", CATEGORY_TOKENS);
+fillSelectPlain("location", LOCATIONS);
+
+const platformSel = document.getElementById("platform");
+const categorySel = document.getElementById("category");
+const locationSel = document.getElementById("location");
+const badgesEl = document.getElementById("badges");
+const promptOut = document.getElementById("promptOut");
+const promptNote = document.getElementById("promptNote");
+const outHeading = document.getElementById("outHeading");
+const copyBtn = document.getElementById("copyBtn");
+
+function getPlatform(id) { return PLATFORMS.find(p => p.id === id); }
+
+function fillTemplate(tmpl, category, country, platformLabel) {
+  let out = tmpl.replaceAll("{CATEGORY}", category);
+  out = out.replaceAll("{COUNTRY}", country || "");
+  out = out.replaceAll("{PLATFORM}", platformLabel || "");
+  // {TIMEZONE} and {LOCAL_LANGUAGES} are intentionally left unresolved —
+  // the prompt's own fallback logic ("If {TIMEZONE} is empty, use UTC...")
+  // is designed to trigger when the model sees the placeholder still in place.
+  return out;
+}
+
+function render() {
+  const platform = getPlatform(platformSel.value);
+  const category = categorySel.value;
+  const location = locationSel.value;
+  const isWorldwide = location === "All";
+
+  // Badges (no confidence data)
+  badgesEl.innerHTML = "";
+  const variantBadge = document.createElement("span");
+  variantBadge.className = "badge variant";
+  variantBadge.textContent = isWorldwide ? "Worldwide variant" : "Country-specific variant";
+  badgesEl.appendChild(variantBadge);
+
+  const toolBadge = document.createElement("span");
+  toolBadge.className = "badge tool";
+  toolBadge.textContent = "Tool: " + platform.tool;
+  badgesEl.appendChild(toolBadge);
+
+  // Static (non-LLM) platforms
+  if (platform.id === "tiktok" || platform.id === "google_trends") {
+    outHeading.textContent = "Guidance (not a fillable prompt)";
+    copyBtn.textContent = "Copy guidance";
+    promptOut.textContent = platform.id === "tiktok" ? TIKTOK_STATIC : GOOGLE_TRENDS_STATIC;
+    promptNote.innerHTML = platform.id === "tiktok"
+      ? "<strong>No prompt to fill in here</strong> — this platform has no verified LLM data source. Use TikTok Creative Center instead, or fall back to the X/Grok-style prompt with a Low confidence flag."
+      : "<strong>No prompt to fill in here</strong> — pull this directly from trends.google.com using the same category/location you selected above.";
+    return;
+  }
+
+  outHeading.textContent = "Generated prompt";
+  copyBtn.textContent = "Copy prompt";
+
+  let template;
+  if (platform.id === "curated_news") template = isWorldwide ? CURATED_NEWS_WORLDWIDE : CURATED_NEWS_COUNTRY;
+  else if (platform.id === "reddit") template = isWorldwide ? REDDIT_WORLDWIDE : REDDIT_COUNTRY;
+  else if (platform.id === "facebook" || platform.id === "instagram") template = isWorldwide ? META_WORLDWIDE : META_COUNTRY;
+  else if (platform.id === "x") template = isWorldwide ? GROK_WORLDWIDE : GROK_COUNTRY;
+
+  const platformLabelForFill = (platform.id === "facebook") ? "Facebook" : (platform.id === "instagram" ? "Instagram" : "");
+  const filled = fillTemplate(
+    template,
+    category,
+    isWorldwide ? "" : location,
+    platformLabelForFill
+  );
+  promptOut.textContent = filled;
+
+  promptNote.innerHTML = "<strong>Remember:</strong> turn on web search before sending this (Claude/ChatGPT: \"+\" menu; Perplexity: Focus mode = Web), and copy the model's self-stated date range into the Tracker's LLM start/end date columns.";
+}
+
+[platformSel, categorySel, locationSel].forEach(el => el.addEventListener("change", render));
+
+copyBtn.addEventListener("click", () => {
+  navigator.clipboard.writeText(promptOut.textContent).then(() => {
+    const original = copyBtn.textContent;
+    copyBtn.textContent = "Copied \u2713";
+    copyBtn.classList.add("copied");
+    setTimeout(() => {
+      copyBtn.textContent = original;
+      copyBtn.classList.remove("copied");
+    }, 1600);
+  });
+});
+
+render();
+</script>
+</body>
+</html>
