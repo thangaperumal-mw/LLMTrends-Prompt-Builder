@@ -147,11 +147,6 @@
   }
   input[type="text"]::placeholder { color: #9AAAAA; }
 
-  .extra-fields {
-    display: none;
-  }
-  .extra-fields.visible { display: grid; }
-
   .badges {
     display: flex;
     flex-wrap: wrap;
@@ -248,17 +243,6 @@
       <div>
         <label for="location">Location</label>
         <select id="location"></select>
-      </div>
-    </div>
-
-    <div class="grid2 extra-fields" id="extraFields">
-      <div>
-        <label for="timezone">Timezone <span class="optional-tag">(optional — leave blank to let the model decide)</span></label>
-        <input type="text" id="timezone" placeholder="e.g. IST, CET, UTC">
-      </div>
-      <div>
-        <label for="localLanguages">Local languages <span class="optional-tag">(optional — leave blank for the default set)</span></label>
-        <input type="text" id="localLanguages" placeholder="e.g. Hindi, Tamil">
       </div>
     </div>
 
@@ -895,9 +879,6 @@ fillSelectPlain("location", LOCATIONS);
 const platformSel = document.getElementById("platform");
 const categorySel = document.getElementById("category");
 const locationSel = document.getElementById("location");
-const timezoneInput = document.getElementById("timezone");
-const localLangInput = document.getElementById("localLanguages");
-const extraFields = document.getElementById("extraFields");
 const badgesEl = document.getElementById("badges");
 const promptOut = document.getElementById("promptOut");
 const promptNote = document.getElementById("promptNote");
@@ -906,12 +887,13 @@ const copyBtn = document.getElementById("copyBtn");
 
 function getPlatform(id) { return PLATFORMS.find(p => p.id === id); }
 
-function fillTemplate(tmpl, category, country, platformLabel, timezone, localLanguages) {
+function fillTemplate(tmpl, category, country, platformLabel) {
   let out = tmpl.replaceAll("{CATEGORY}", category);
   out = out.replaceAll("{COUNTRY}", country || "");
   out = out.replaceAll("{PLATFORM}", platformLabel || "");
-  out = out.replaceAll("{TIMEZONE}", timezone || "");
-  out = out.replaceAll("{LOCAL_LANGUAGES}", localLanguages || "");
+  // {TIMEZONE} and {LOCAL_LANGUAGES} are intentionally left unresolved —
+  // the prompt's own fallback logic ("If {TIMEZONE} is empty, use UTC...")
+  // is designed to trigger when the model sees the placeholder still in place.
   return out;
 }
 
@@ -920,9 +902,6 @@ function render() {
   const category = categorySel.value;
   const location = locationSel.value;
   const isWorldwide = location === "All";
-  const isCuratedNews = platform.id === "curated_news";
-
-  extraFields.classList.toggle("visible", isCuratedNews);
 
   // Badges (no confidence data)
   badgesEl.innerHTML = "";
@@ -961,16 +940,13 @@ function render() {
     template,
     category,
     isWorldwide ? "" : location,
-    platformLabelForFill,
-    isCuratedNews ? timezoneInput.value.trim() : "",
-    isCuratedNews ? localLangInput.value.trim() : ""
+    platformLabelForFill
   );
   promptOut.textContent = filled;
 
   promptNote.innerHTML = "<strong>Remember:</strong> turn on web search before sending this (Claude/ChatGPT: \"+\" menu; Perplexity: Focus mode = Web), and copy the model's self-stated date range into the Tracker's LLM start/end date columns.";
 }
 
-[platformSel, categorySel, locationSel, timezoneInput, localLangInput].forEach(el => el.addEventListener("input", render));
 [platformSel, categorySel, locationSel].forEach(el => el.addEventListener("change", render));
 
 copyBtn.addEventListener("click", () => {
