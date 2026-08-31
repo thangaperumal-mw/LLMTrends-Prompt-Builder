@@ -639,8 +639,7 @@ with {CATEGORY} and your stated 7-day window, then report in a numbered
 table with these exact columns:
 Rank | Entity Name (original script + English translation if non-English) |
 Entity Type (Organization / Person / Product / Event / Place / Topic) |
-Engagement Found (reactions + comments + shares for Facebook; likes +
-comments + reel views for Instagram — YOUR SEARCH actually returned for
+Engagement Found ({ENGAGEMENT_METRIC} — YOUR SEARCH actually returned for
 this entity, not an estimate) | Page(s)/Account(s) (name or @handle, noting
 region/language) | Driver (one line on what drove the engagement)
 
@@ -697,8 +696,7 @@ with {CATEGORY} and your stated 7-day window, then report in a numbered
 table with these exact columns:
 Rank | Entity Name (original script + English translation if non-English) |
 Entity Type (Organization / Person / Product / Event / Place / Topic) |
-Engagement Found (reactions + comments + shares for Facebook; likes +
-comments + reel views for Instagram — YOUR SEARCH actually returned for
+Engagement Found ({ENGAGEMENT_METRIC} — YOUR SEARCH actually returned for
 this entity, not an estimate) | Page(s)/Account(s) (name or @handle, noting
 native-language vs English) | Driver (one line on what drove the
 engagement)
@@ -877,10 +875,11 @@ const copyBtn = document.getElementById("copyBtn");
 
 function getPlatform(id) { return PLATFORMS.find(p => p.id === id); }
 
-function fillTemplate(tmpl, category, country, platformLabel) {
+function fillTemplate(tmpl, category, country, platformLabel, engagementMetric) {
   let out = tmpl.replaceAll("{CATEGORY}", category);
   out = out.replaceAll("{COUNTRY}", country || "");
   out = out.replaceAll("{PLATFORM}", platformLabel || "");
+  out = out.replaceAll("{ENGAGEMENT_METRIC}", engagementMetric || "");
   // {TIMEZONE} and {LOCAL_LANGUAGES} are intentionally left unresolved —
   // the prompt's own fallback logic ("If {TIMEZONE} is empty, use UTC...")
   // is designed to trigger when the model sees the placeholder still in place.
@@ -926,11 +925,15 @@ function render() {
   else if (platform.id === "x") template = isWorldwide ? GROK_WORLDWIDE : GROK_COUNTRY;
 
   const platformLabelForFill = (platform.id === "facebook") ? "Facebook" : (platform.id === "instagram" ? "Instagram" : "");
+  const engagementMetric = (platform.id === "facebook") ? "reactions + comments + shares"
+    : (platform.id === "instagram") ? "likes + comments + reel views"
+    : "";
   const filled = fillTemplate(
     template,
     category,
     isWorldwide ? "" : location,
-    platformLabelForFill
+    platformLabelForFill,
+    engagementMetric
   );
   promptOut.textContent = filled;
 
