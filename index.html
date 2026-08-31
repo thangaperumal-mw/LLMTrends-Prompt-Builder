@@ -609,8 +609,7 @@ language subreddits despite the above, say so explicitly at the top of
 your answer and state what scope your answer actually covers.`;
 
 const META_WORLDWIDE = `Search for {PLATFORM} activity related to {CATEGORY} worldwide, from the
-last 7 days (including today). ({PLATFORM} = Facebook or Instagram —
-answer for that one only, run twice for both.) Before doing anything else,
+last 7 days (including today). Before doing anything else,
 determine today's actual date, calculate the exact 7-day window that
 covers (today minus 6 days) through today, and state that date range at
 the very top of your answer.
@@ -649,15 +648,10 @@ ALWAYS return 10 entities, ranked by Engagement Found, highest first. Only
 write "not available" if your search for that entity returns zero results
 within the stated window. If your final list still skews heavily toward
 one region or English-language accounts despite the above, say so
-explicitly at the top of your answer.
-
-[Caveat to log in Analyst Notes: Meta AI's access to genuine internal FB/IG
-trending data is unverified — treat results as lower-confidence until the
-pilot batch validates them.]`;
+explicitly at the top of your answer.`;
 
 const META_COUNTRY = `Search for {PLATFORM} activity related to {CATEGORY} in {COUNTRY}, from
-the last 7 days (including today). ({PLATFORM} = Facebook or Instagram —
-answer for that one only, run twice for both.) Before doing anything else,
+the last 7 days (including today). Before doing anything else,
 determine today's actual date, calculate the exact 7-day window that
 covers (today minus 6 days) through today, and state that date range at
 the very top of your answer.
@@ -715,11 +709,7 @@ within the stated window.
 
 If you cannot isolate {COUNTRY}, or results skew heavily toward English-
 language accounts despite the above, say so explicitly at the top of your
-answer and state what scope your answer actually covers.
-
-[Caveat to log in Analyst Notes: Meta AI's access to genuine internal FB/IG
-trending data is unverified — treat results as lower-confidence until the
-pilot batch validates them.]`;
+answer and state what scope your answer actually covers.`;
 
 const GROK_WORLDWIDE = `Using your access to live X (Twitter) activity, identify the 10 entities
 in {CATEGORY} that X users worldwide engaged with most in the last 7 days
