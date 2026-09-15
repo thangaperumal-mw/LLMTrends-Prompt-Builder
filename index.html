@@ -292,17 +292,13 @@ const CURATED_NEWS_WORLDWIDE = `You are producing a reproducible news-trend extr
 Maximise recall inside the rules below. Do not invent an index-wide total.
 
 TASK: Rank entities in {CATEGORY} by news coverage worldwide
-DATE WINDOW: Last 7 days, including today
-TIMEZONE: {TIMEZONE}
-LANGUAGES TO SEARCH: {LOCAL_LANGUAGES}
+DATE WINDOW: 7 complete UTC days, ending yesterday (today is excluded, since it is not yet a complete day)
+LANGUAGES TO SEARCH: determined by the Pass 0 source list below — no fixed list
 
-Before searching, determine today's date from live information, calculate the exact 7-day window as (today minus 6 days) through today in {TIMEZONE}, and state those calendar dates at the top of the answer.
-If {TIMEZONE} is empty, use UTC and name it in Coverage.
+Before searching, determine today's date in UTC from live information. The date window is the 7 complete UTC days ending yesterday — that is, (today's UTC date minus 7 days) through (today's UTC date minus 1 day), inclusive. State this exact UTC date range at the top of the answer.
 
-If {LOCAL_LANGUAGES} is empty, search at least English plus:
-Spanish, Portuguese, French, German, Arabic, Hindi or another major South Asian language, and Chinese or Japanese or Korean.
-Also add any other language clearly relevant to {CATEGORY}.
-Name every language actually searched in Coverage.
+Language rule:
+Do not search using a fixed list of languages. Once Pass 0 identifies your source list, search each source in that source's own primary language — a French outlet gets French-language queries, a Japanese outlet gets Japanese-language queries, and so on. Do not query a native-language outlet using only English keywords; this is how non-English coverage gets silently missed. Name every language actually searched in Coverage.
 
 Category meaning:
 Interpret {CATEGORY} as a Google Trends-style theme. Rank entities that news outlets across countries actually covered inside that theme.
@@ -313,8 +309,7 @@ Do not silently return a US/UK English list.
 A valid worldwide list should include entities whose coverage originated in more than one region when the sample supports it.
 
 Anti-bias rule:
-Use the worldwide scope and {LOCAL_LANGUAGES} to set the corpus.
-Do not use my account location, IP address, interface language, or physical location.
+Use the worldwide scope and Pass 0's own source languages to set the corpus — not a fixed language list, and not my account location, IP address, interface language, or physical location.
 
 Pass 0 — build a multi-region source list yourself
 Before ranking, identify 12–20 sources spanning multiple regions, including:
@@ -328,7 +323,7 @@ Three-pass search:
 Pass 1 — discover candidates
 Run all of these as separate queries:
 1) {CATEGORY} news in the date window, in English
-2) the same query in each language in LANGUAGES TO SEARCH
+2) the same query in each source's own primary language, per the Language rule above
 3) {CATEGORY} + date window on regional domains/outlets from Pass 0
 4) event-type queries (awards, launches, releases, matches, festivals, rankings, recalls, openings, deaths)
 Do not use a single English query and call it worldwide.
@@ -380,10 +375,9 @@ Prefer named entities over vague topics.
 Merge translations and name variants.
 Keep the most widely recognized public name; add a local/original name in parentheses when useful.
 Do not rank countries, cities, or regions as the entity unless that place is itself the cultural/commercial product being covered.
-Do not rank politicians, parties, elections, or legislation. If politics touches a {CATEGORY} story, keep the artist, work, brand, company, event, or venue.
 
 Always write this first:
-1) Coverage: confirm Worldwide; list languages/regions represented; state English-share; state the exact date window used
+1) Coverage: confirm Worldwide; list languages/regions represented; state English-share; state the exact UTC date window used
 2) Method: Pass 0 outlets, queries, entity-name searches, articles inspected, syndication rule used
 3) Limits: languages missed, paywalls, why the set is under 80 if it is
 
@@ -404,21 +398,35 @@ const CURATED_NEWS_COUNTRY = `You are producing a reproducible news-trend extrac
 Maximise recall inside the rules below. Do not invent an index-wide total.
 
 TASK: Rank entities in {CATEGORY} by news coverage in {COUNTRY}
-DATE WINDOW: Last 7 days, including today
-TIMEZONE: {TIMEZONE}
-LANGUAGES TO SEARCH: {LOCAL_LANGUAGES}
+DATE WINDOW: 7 complete UTC days, ending yesterday (today is excluded, since it is not yet a complete day)
+LANGUAGES TO SEARCH: use the language mapping table below — do not guess
 
-Before searching, determine today's date from live information, calculate the exact 7-day window as (today minus 6 days) through today in {TIMEZONE}, and state those calendar dates at the top of the answer.
-If {TIMEZONE} is empty, use the standard national timezone of {COUNTRY} and name it in Coverage.
+Before searching, determine today's date in UTC from live information. The date window is the 7 complete UTC days ending yesterday — that is, (today's UTC date minus 7 days) through (today's UTC date minus 1 day), inclusive. State this exact UTC date range at the top of the answer.
 
-If {LOCAL_LANGUAGES} is empty, decide the official/primary language(s) of {COUNTRY} and English, then name them in Coverage.
+Use this language mapping to decide which language(s) to search in — do not guess, use exactly this table:
+
+France            -> French
+Sweden            -> Swedish
+Netherlands       -> Dutch
+Japan             -> Japanese
+Australia         -> English
+Germany           -> German
+United States     -> English
+Finland           -> Finnish AND Swedish (both official — search both)
+United Kingdom    -> English
+Canada            -> English AND French (both official — search both)
+
+If {COUNTRY} is not in this list, determine its official primary language(s) yourself before searching. Name every language actually searched in Coverage.
 
 Category meaning:
-Interpret {CATEGORY} as a Google Trends-style theme. Rank entities covered in that theme in connection with {COUNTRY}.
-Do not default to globally famous English-language names unless they were covered in this country corpus.
+Interpret {CATEGORY} as a Google Trends-style theme. Rank entities covered in that theme by outlets based in {COUNTRY}, regardless of whether the specific story has a local angle.
+Do not default to globally famous English-language names unless they were covered in this country's outlet corpus.
+
+Country scope rule:
+Rank by coverage from outlets based in {COUNTRY} — i.e., where the publisher itself is located — not by whether a given story is specifically about {COUNTRY}. An outlet based in {COUNTRY} covering a purely international story still counts fully toward {COUNTRY}'s coverage.
 
 Anti-bias rule:
-Use {COUNTRY} and {LOCAL_LANGUAGES} to set scope. Do not use my account location, IP address, interface language, or physical location.
+Use {COUNTRY} and the language table above to set scope. Do not use my account location, IP address, interface language, or physical location.
 
 Pass 0 — build a local source list yourself
 Before ranking, identify 10–15 sources for this run:
@@ -433,7 +441,7 @@ Three-pass search:
 Pass 1 — discover candidates
 Run all of these:
 1) {CATEGORY} + {COUNTRY} + date window, in English
-2) the same query in each local language
+2) the same query in each language from the mapping table above
 3) {CATEGORY} + date window restricted to that country's domains/outlets from Pass 0
 4) event-type queries (awards, launches, releases, matches, festivals, rankings, recalls, openings, deaths)
 Collect 15–25 candidate entities.
@@ -483,10 +491,9 @@ Allowed types: Organization, Person, Product, Event, Place, Topic.
 Merge aliases, translations, and transliterations.
 Local/original name first, English in parentheses when useful.
 Do not rank countries, cities, or regions as the entity unless that place is itself the cultural/commercial product being covered.
-Do not rank politicians, parties, elections, or legislation. If politics touches a {CATEGORY} story, keep the artist, work, brand, company, event, or venue.
 
 Always write this first:
-1) Coverage: country, languages, Pass 0 outlets, English-share, exact date window used
+1) Coverage: country, languages, Pass 0 outlets, English-share, exact UTC date window used
 2) Method: queries, entity-name searches, articles inspected, syndication rule used
 3) Limits: paywalls, missed languages, why the set is under 80 if it is
 
@@ -502,60 +509,28 @@ Table rules:
 - At least 1 in-window article URL per row; 2 when available.
 - Driver: one line on what drove the coverage.`;
 
-const REDDIT_WORLDWIDE = `Search Reddit for discussion of {CATEGORY} worldwide, posted in the last 7
-days (including today). Before doing anything else, determine today's
-actual date, calculate the exact 7-day window that covers (today minus 6
-days) through today, and state that date range at the very top of your
-answer.
+const REDDIT_WORLDWIDE = `Search Reddit for discussion of {CATEGORY} worldwide, posted in the 7 complete UTC days ending yesterday (today is excluded, since it is not yet a complete day). Before doing anything else, determine today's actual date in UTC, then calculate that exact 7-day window — (today's UTC date minus 7 days) through (today's UTC date minus 1 day), inclusive — and state that UTC date range at the very top of your answer.
 
-IMPORTANT — ignore my location entirely for this task. Do not default to
-English-language or my-region subreddits. Actively search across
-subreddits from multiple regions and languages, using these as starting
-anchors (not an exhaustive list): r/worldnews, r/de (German), r/france
-(French), r/japan (Japanese), r/india (Hindi/English), r/brasil
-(Portuguese), r/mexico (Spanish), r/unitedkingdom, r/canada, r/sweden
-(Swedish), r/finland (Finnish), r/netherlands (Dutch), plus the relevant
-category-specific subreddit in each language/region where one exists.
+IMPORTANT — ignore my location entirely for this task. Do not default to English-language or my-region subreddits. Actively search across subreddits from multiple regions and languages, using these as starting anchors (not an exhaustive list): r/worldnews, r/de (German), r/france (French), r/japan (Japanese), r/india (Hindi/English), r/brasil (Portuguese), r/mexico (Spanish), r/unitedkingdom, r/canada, r/sweden (Swedish), r/finland (Finnish), r/netherlands (Dutch), plus the relevant category-specific subreddit in each language/region where one exists.
 
-When you find an entity that trends primarily in a non-English-language
-subreddit, report its name in its ORIGINAL script/language, with an
-English translation in parentheses if helpful. Do not silently anglicize
-or translate-only an entity name.
+When you find an entity that trends primarily in a non-English-language subreddit, report its name in its ORIGINAL script/language, with an English translation in parentheses if helpful. Do not silently anglicize or translate-only an entity name.
 
-Identify the 10 entities most discussed within your stated 7-day window,
-across the subreddits and languages above. Do not include posts from
-before that window, even if highly relevant — exclude them and move to the
-next entity instead.
+Identify the 10 entities most discussed within your stated 7-day window, across the subreddits and languages above. Do not include posts from before that window, even if highly relevant — exclude them and move to the next entity instead.
 
-Do not restrict the list to any particular kind of entity — include whatever
-appears, whether that is an organisation, a person, a product, an event, a
-place or a topic.
+Do not restrict the list to any particular kind of entity — include whatever appears, whether that is an organisation, a person, a product, an event, a place or a topic. Do not rank countries, cities, or regions as the entity unless that place is itself the cultural/commercial product being covered (e.g. a football club or company named after a place, a regional dish, a place-branded institution).
 
-For each entity, run a dedicated search for that entity's name together
-with {CATEGORY} and your stated 7-day window, then report in a numbered
-table with these exact columns:
-Rank | Entity Name (original script + English translation if non-English) |
-Entity Type (Organization / Person / Product / Event / Place / Topic) |
-Engagement Found (upvotes + comments YOUR SEARCH actually returned for this
-entity within the stated window — not an estimate, just what you found) |
-Subreddit(s) (r/...) + thread link, if you can identify them | Driver (one
-line on what drove the discussion)
+Prefer named entities over story-shaped descriptions — report the entity itself (e.g. "Honda"), not a headline-style phrase (e.g. not "Honda head-gasket warranty extension"); put that longer detail in the Story/Context column instead. Merge translations and name variants; keep the most widely recognized public name, with a local/original name in parentheses when useful.
 
-ALWAYS return 10 entities, ranked by Engagement Found, highest first. Only
-write "not available" if your search for that entity returns zero results
-within the stated window. If your final list still skews heavily toward
-one region, language, or English-language subreddits despite the above,
-say so explicitly at the top of your answer.`;
+Exclude any entity whose discussion in this window is primarily NSFW/adult-flagged content.
 
-const REDDIT_COUNTRY = `Search Reddit for discussion of {CATEGORY} relevant to {COUNTRY}, posted in
-the last 7 days (including today). Before doing anything else, determine
-today's actual date, calculate the exact 7-day window that covers (today
-minus 6 days) through today, and state that date range at the very top of
-your answer.
+For each entity, run a dedicated search for that entity's name together with {CATEGORY} and your stated 7-day window, then report in a numbered table with these exact columns:
+Rank | Entity Name (original script + English translation if non-English) | Entity Type (Organization / Person / Product / Event / Place / Topic) | Story/Context (a short phrase on the specific post, thread, or event driving this entity's activity, if the entity name alone doesn't capture it) | Engagement Found (upvotes + comments YOUR SEARCH actually returned for this entity within the stated window — not an estimate, just what you found) | Subreddit(s) (r/...) + thread link, if you can identify them | Driver (one line on what drove the discussion)
 
-IMPORTANT — focus specifically on {COUNTRY}. Use this language mapping to
-decide which language(s) to search in — do not guess, use exactly this
-table:
+Return 10 entities if 10 have qualifying evidence; otherwise return fewer — do not pad the list to reach 10. Rank by Engagement Found, highest first, where available. An entity may still be reported even when no reliable Engagement Found figure exists for it — write "not available" in that field rather than omitting the entity or inventing a number. If your final list still skews heavily toward one region, language, or English-language subreddits despite the above, say so explicitly at the top of your answer.`;
+
+const REDDIT_COUNTRY = `Search Reddit for discussion of {CATEGORY} relevant to {COUNTRY}, posted in the 7 complete UTC days ending yesterday (today is excluded, since it is not yet a complete day). Before doing anything else, determine today's actual date in UTC, then calculate that exact 7-day window — (today's UTC date minus 7 days) through (today's UTC date minus 1 day), inclusive — and state that UTC date range at the very top of your answer.
+
+IMPORTANT — focus specifically on {COUNTRY}. Use this language mapping to decide which language(s) to search in — do not guess, use exactly this table:
 
 France            -> French
 Sweden            -> Swedish
@@ -568,96 +543,51 @@ Finland           -> Finnish AND Swedish (both official — search both)
 United Kingdom    -> English
 Canada            -> English AND French (both official — search both)
 
-If {COUNTRY} is not in this list, determine its official primary
-language(s) yourself before searching.
+If {COUNTRY} is not in this list, determine its official primary language(s) yourself before searching.
 
-Reddit is organised by subreddit, not by country — search {COUNTRY}'s
-national subreddit (e.g. r/france, r/germany) AND relevant
-language-specific subreddits in {COUNTRY}'s own language(s) from the table
-above, not just English-language or global subreddits that merely mention
-{COUNTRY}. For Finland and Canada specifically, search subreddits in EACH
-of their two official languages — do not pick only one.
+Reddit is organised by subreddit, not by country — search {COUNTRY}'s national subreddit (e.g. r/france, r/germany) AND relevant language-specific subreddits in {COUNTRY}'s own language(s) from the table above, not just English-language or global subreddits that merely mention {COUNTRY}. For Finland and Canada specifically, search subreddits in EACH of their two official languages — do not pick only one.
 
-When you find an entity that trends primarily in a native-language
-subreddit, report its name in its ORIGINAL script/language, with an
-English translation in parentheses if helpful.
+Country scope rule: Count discussion from subreddits associated with or primarily used by {COUNTRY}, regardless of whether a specific post's topic has a local angle. A post from a {COUNTRY}-based subreddit about an international story still counts fully toward {COUNTRY}'s coverage.
 
-Identify the 10 entities most discussed within your stated 7-day window,
-relevant to {COUNTRY}. Do not include posts from before that window, even
-if highly relevant — exclude them and move to the next entity instead.
+When you find an entity that trends primarily in a native-language subreddit, report its name in its ORIGINAL script/language, with an English translation in parentheses if helpful.
 
-Do not restrict the list to any particular kind of entity — include whatever
-appears, whether that is an organisation, a person, a product, an event, a
-place or a topic.
+Identify the 10 entities most discussed within your stated 7-day window, relevant to {COUNTRY}. Do not include posts from before that window, even if highly relevant — exclude them and move to the next entity instead.
 
-For each entity, run a dedicated search for that entity's name together
-with {CATEGORY} and your stated 7-day window, then report in a numbered
-table with these exact columns:
-Rank | Entity Name (original script + English translation if non-English) |
-Entity Type (Organization / Person / Product / Event / Place / Topic) |
-Engagement Found (upvotes + comments YOUR SEARCH actually returned for this
-entity within the stated window — not an estimate, just what you found) |
-Subreddit(s) (r/...) + thread link, if you can identify them | Driver (one
-line on what drove the discussion)
+Do not restrict the list to any particular kind of entity — include whatever appears, whether that is an organisation, a person, a product, an event, a place or a topic. Do not rank countries, cities, or regions as the entity unless that place is itself the cultural/commercial product being covered (e.g. a football club or company named after a place, a regional dish, a place-branded institution).
 
-ALWAYS return 10 entities, ranked by Engagement Found, highest first. Only
-write "not available" if your search for that entity returns zero results
-within the stated window.
+Prefer named entities over story-shaped descriptions — report the entity itself, not a headline-style phrase; put that longer detail in the Story/Context column instead. Merge translations and name variants; local/original name first, English in parentheses when useful.
 
-If you cannot isolate {COUNTRY}, or results skew heavily toward English-
-language subreddits despite the above, say so explicitly at the top of
-your answer and state what scope your answer actually covers.`;
+Exclude any entity whose discussion in this window is primarily NSFW/adult-flagged content.
 
-const META_WORLDWIDE = `Search for {PLATFORM} activity related to {CATEGORY} worldwide, from the
-last 7 days (including today). Before doing anything else,
-determine today's actual date, calculate the exact 7-day window that
-covers (today minus 6 days) through today, and state that date range at
-the very top of your answer.
+For each entity, run a dedicated search for that entity's name together with {CATEGORY} and your stated 7-day window, then report in a numbered table with these exact columns:
+Rank | Entity Name (original script + English translation if non-English) | Entity Type (Organization / Person / Product / Event / Place / Topic) | Story/Context (a short phrase on the specific post, thread, or event driving this entity's activity, if the entity name alone doesn't capture it) | Engagement Found (upvotes + comments YOUR SEARCH actually returned for this entity within the stated window — not an estimate, just what you found) | Subreddit(s) (r/...) + thread link, if you can identify them | Driver (one line on what drove the discussion)
 
-IMPORTANT — ignore my location entirely for this task. Do not default to
-English-language or my-region Pages/Accounts. Actively check major public
-Pages/Accounts across multiple regions and languages — e.g. English (BBC
-News), French (Le Monde), German (Tagesschau), Japanese (NHK), Portuguese
-(Globo), Spanish (Univision) — as starting anchors, not an exhaustive
-list, plus category-relevant accounts in each language/region.
+Return 10 entities if 10 have qualifying evidence; otherwise return fewer — do not pad the list to reach 10. Rank by Engagement Found, highest first, where available. An entity may still be reported even when no reliable Engagement Found figure exists for it — write "not available" in that field rather than omitting the entity or inventing a number.
 
-When you find an entity that trends primarily on a non-English-language
-Page/Account, report its name in its ORIGINAL script/language, with an
-English translation in parentheses if helpful.
+If you cannot isolate subreddits associated with {COUNTRY}, or results skew heavily toward English-language subreddits despite the above, say so explicitly at the top of your answer and state what scope your answer actually covers.`;
 
-Identify the 10 entities with the most engagement within your stated 7-day
-window, across the regions and languages above. Do not include posts from
-before that window, even if highly relevant — exclude them and move to the
-next entity instead.
+const META_WORLDWIDE = `Search for {PLATFORM} activity related to {CATEGORY} worldwide, from the 7 complete UTC days ending yesterday (today is excluded, since it is not yet a complete day). Before doing anything else, determine today's actual date in UTC, then calculate that exact 7-day window — (today's UTC date minus 7 days) through (today's UTC date minus 1 day), inclusive — and state that UTC date range at the very top of your answer.
 
-Do not restrict the list to any particular kind of entity — include whatever
-appears, whether that is an organisation, a person, a product, an event, a
-place or a topic.
+IMPORTANT — ignore my location entirely for this task. Do not default to English-language or my-region Pages/Accounts. Actively check major public Pages/Accounts across multiple regions and languages — e.g. English (BBC News), French (Le Monde), German (Tagesschau), Japanese (NHK), Portuguese (Globo), Spanish (Univision) — as starting anchors, not an exhaustive list, plus category-relevant accounts in each language/region.
 
-For each entity, run a dedicated search for that entity's name together
-with {CATEGORY} and your stated 7-day window, then report in a numbered
-table with these exact columns:
-Rank | Entity Name (original script + English translation if non-English) |
-Entity Type (Organization / Person / Product / Event / Place / Topic) |
-Engagement Found ({ENGAGEMENT_METRIC} — YOUR SEARCH actually returned for
-this entity, not an estimate) | Page(s)/Account(s) (name or @handle, noting
-region/language) | Driver (one line on what drove the engagement)
+When you find an entity that trends primarily on a non-English-language Page/Account, report its name in its ORIGINAL script/language, with an English translation in parentheses if helpful.
 
-ALWAYS return 10 entities, ranked by Engagement Found, highest first. Only
-write "not available" if your search for that entity returns zero results
-within the stated window. If your final list still skews heavily toward
-one region or English-language accounts despite the above, say so
-explicitly at the top of your answer.`;
+Identify the 10 entities with the most engagement within your stated 7-day window, across the regions and languages above. Do not include posts from before that window, even if highly relevant — exclude them and move to the next entity instead.
 
-const META_COUNTRY = `Search for {PLATFORM} activity related to {CATEGORY} in {COUNTRY}, from
-the last 7 days (including today). Before doing anything else,
-determine today's actual date, calculate the exact 7-day window that
-covers (today minus 6 days) through today, and state that date range at
-the very top of your answer.
+Do not restrict the list to any particular kind of entity — include whatever appears, whether that is an organisation, a person, a product, an event, a place or a topic. Do not rank countries, cities, or regions as the entity unless that place is itself the cultural/commercial product being covered (e.g. a football club or company named after a place, a regional dish, a place-branded institution).
 
-IMPORTANT — focus specifically on {COUNTRY}. Use this language mapping to
-decide which language(s) to search in — do not guess, use exactly this
-table:
+Prefer named entities over story-shaped descriptions — report the entity itself (e.g. "Honda"), not a headline-style phrase (e.g. not "Honda head-gasket warranty extension"); put that longer detail in the Story/Context column instead. Merge translations and name variants; keep the most widely recognized public name, with a local/original name in parentheses when useful.
+
+Exclude any entity whose activity in this window is primarily NSFW/adult-flagged content.
+
+For each entity, run a dedicated search for that entity's name together with {CATEGORY} and your stated 7-day window, then report in a numbered table with these exact columns:
+Rank | Entity Name (original script + English translation if non-English) | Entity Type (Organization / Person / Product / Event / Place / Topic) | Story/Context (a short phrase on the specific post or campaign driving this entity's activity, if the entity name alone doesn't capture it) | Engagement Found ({ENGAGEMENT_METRIC} — YOUR SEARCH actually returned for this entity, not an estimate) | Page(s)/Account(s) (name or @handle, noting region/language) | Driver (one line on what drove the engagement)
+
+Return 10 entities if 10 have qualifying evidence; otherwise return fewer — do not pad the list to reach 10. Rank by Engagement Found, highest first, where available. An entity may still be reported even when no reliable Engagement Found figure exists for it — write "not available" in that field rather than omitting the entity or inventing a number. If your final list still skews heavily toward one region or English-language accounts despite the above, say so explicitly at the top of your answer.`;
+
+const META_COUNTRY = `Search for {PLATFORM} activity related to {CATEGORY} in {COUNTRY}, from the 7 complete UTC days ending yesterday (today is excluded, since it is not yet a complete day). Before doing anything else, determine today's actual date in UTC, then calculate that exact 7-day window — (today's UTC date minus 7 days) through (today's UTC date minus 1 day), inclusive — and state that UTC date range at the very top of your answer.
+
+IMPORTANT — focus specifically on {COUNTRY}. Use this language mapping to decide which language(s) to search in — do not guess, use exactly this table:
 
 France            -> French
 Sweden            -> Swedish
@@ -670,94 +600,53 @@ Finland           -> Finnish AND Swedish (both official — search both)
 United Kingdom    -> English
 Canada            -> English AND French (both official — search both)
 
-If {COUNTRY} is not in this list, determine its official primary
-language(s) yourself before searching.
+If {COUNTRY} is not in this list, determine its official primary language(s) yourself before searching.
 
-Actively include Pages/Accounts native to {COUNTRY} in {COUNTRY}'s own
-language(s) from the table above, not just English-language or
-international accounts that merely mention {COUNTRY}. For Finland and
-Canada specifically, check accounts in EACH of their two official
-languages — do not pick only one.
+Actively include Pages/Accounts native to {COUNTRY} in {COUNTRY}'s own language(s) from the table above, not just English-language or international accounts that merely mention {COUNTRY}. For Finland and Canada specifically, check accounts in EACH of their two official languages — do not pick only one.
 
-When you find an entity that trends primarily on a native-language
-Page/Account, report its name in its ORIGINAL script/language, with an
-English translation in parentheses if helpful.
+Country scope rule: Count engagement from Pages/Accounts based in {COUNTRY}, regardless of whether a specific post's topic has a local angle. A {COUNTRY}-based Page/Account covering a purely international story still counts fully toward {COUNTRY}'s coverage.
 
-Identify the 10 entities with the most engagement within your stated 7-day
-window, from {COUNTRY}. Do not include posts from before that window, even
-if highly relevant — exclude them and move to the next entity instead.
+When you find an entity that trends primarily on a native-language Page/Account, report its name in its ORIGINAL script/language, with an English translation in parentheses if helpful.
 
-Do not restrict the list to any particular kind of entity — include whatever
-appears, whether that is an organisation, a person, a product, an event, a
-place or a topic.
+Identify the 10 entities with the most engagement within your stated 7-day window, from {COUNTRY}. Do not include posts from before that window, even if highly relevant — exclude them and move to the next entity instead.
 
-For each entity, run a dedicated search for that entity's name together
-with {CATEGORY} and your stated 7-day window, then report in a numbered
-table with these exact columns:
-Rank | Entity Name (original script + English translation if non-English) |
-Entity Type (Organization / Person / Product / Event / Place / Topic) |
-Engagement Found ({ENGAGEMENT_METRIC} — YOUR SEARCH actually returned for
-this entity, not an estimate) | Page(s)/Account(s) (name or @handle, noting
-native-language vs English) | Driver (one line on what drove the
-engagement)
+Do not restrict the list to any particular kind of entity — include whatever appears, whether that is an organisation, a person, a product, an event, a place or a topic. Do not rank countries, cities, or regions as the entity unless that place is itself the cultural/commercial product being covered (e.g. a football club or company named after a place, a regional dish, a place-branded institution).
 
-ALWAYS return 10 entities, ranked by Engagement Found, highest first. Only
-write "not available" if your search for that entity returns zero results
-within the stated window.
+Prefer named entities over story-shaped descriptions — report the entity itself, not a headline-style phrase; put that longer detail in the Story/Context column instead. Merge translations and name variants; local/original name first, English in parentheses when useful.
 
-If you cannot isolate {COUNTRY}, or results skew heavily toward English-
-language accounts despite the above, say so explicitly at the top of your
-answer and state what scope your answer actually covers.`;
+Exclude any entity whose activity in this window is primarily NSFW/adult-flagged content.
 
-const GROK_WORLDWIDE = `Using your access to live X (Twitter) activity, identify the 10 entities
-in {CATEGORY} that X users worldwide engaged with most in the last 7 days
-(including today). Before doing anything else, determine today's actual
-date, calculate the exact 7-day window that covers (today minus 6 days)
-through today, and state that date range at the very top of your answer.
+For each entity, run a dedicated search for that entity's name together with {CATEGORY} and your stated 7-day window, then report in a numbered table with these exact columns:
+Rank | Entity Name (original script + English translation if non-English) | Entity Type (Organization / Person / Product / Event / Place / Topic) | Story/Context (a short phrase on the specific post or campaign driving this entity's activity, if the entity name alone doesn't capture it) | Engagement Found ({ENGAGEMENT_METRIC} — YOUR SEARCH actually returned for this entity, not an estimate) | Page(s)/Account(s) (name or @handle, noting native-language vs English) | Driver (one line on what drove the engagement)
 
-IMPORTANT — ignore my location entirely for this task. Do not default to
-English-language or my-region posts. Actively check activity across
-multiple regions and languages — e.g. English, French, German, Japanese,
-Portuguese, Spanish, Hindi, Arabic — as starting anchors, not an
-exhaustive list, so no single region or language dominates by default.
+Return 10 entities if 10 have qualifying evidence; otherwise return fewer — do not pad the list to reach 10. Rank by Engagement Found, highest first, where available. An entity may still be reported even when no reliable Engagement Found figure exists for it — write "not available" in that field rather than omitting the entity or inventing a number.
 
-When you find an entity that trends primarily in a non-English-language
-post, report its name in its ORIGINAL script/language, with an English
-translation in parentheses if helpful.
+If you cannot isolate Pages/Accounts based in {COUNTRY}, or results skew heavily toward English-language accounts despite the above, say so explicitly at the top of your answer and state what scope your answer actually covers.`;
 
-Identify the 10 entities with the most engagement within your stated
-7-day window, across the regions and languages above. Do not include posts
-from before that window, even if highly relevant — exclude them and move
-to the next entity instead.
+const GROK_WORLDWIDE = `Using your access to live X (Twitter) activity, identify the 10 entities in {CATEGORY} that X users worldwide engaged with most in the 7 complete UTC days ending yesterday (today is excluded, since it is not yet a complete day). Before doing anything else, determine today's actual date in UTC, then calculate that exact 7-day window — (today's UTC date minus 7 days) through (today's UTC date minus 1 day), inclusive — and state that UTC date range at the very top of your answer.
 
-Do not restrict the list to any particular kind of entity — include whatever
-appears, whether that is an organisation, a person, a product, an event, a
-place or a topic.
+IMPORTANT — ignore my location entirely for this task. Do not default to English-language or my-region posts. Actively check activity across multiple regions and languages — e.g. English, French, German, Japanese, Portuguese, Spanish, Hindi, Arabic — as starting anchors, not an exhaustive list, so no single region or language dominates by default.
+
+Original posts only: only count posts authored by the entity itself. Exclude the entity's own reposts/retweets of other users' content from both the candidate list and the engagement count — a repost is not the entity's own content and should not inflate its figure. Count a viral original post once, as a single item, even if it is reposted many times by other users — do not create a duplicate entry for each repost of the same original post; let those reposts contribute to that post's own reply/repost/like counts instead.
+
+When you find an entity that trends primarily in a non-English-language post, report its name in its ORIGINAL script/language, with an English translation in parentheses if helpful.
+
+Identify the 10 entities with the most engagement within your stated 7-day window, across the regions and languages above. Do not include posts from before that window, even if highly relevant — exclude them and move to the next entity instead.
+
+Do not restrict the list to any particular kind of entity — include whatever appears, whether that is an organisation, a person, a product, an event, a place or a topic. Do not rank countries, cities, or regions as the entity unless that place is itself the cultural/commercial product being covered (e.g. a football club or company named after a place, a regional dish, a place-branded institution).
+
+Prefer named entities over story-shaped descriptions — report the entity itself (e.g. "Honda"), not a headline-style phrase (e.g. not "Honda head-gasket warranty extension"); put that longer detail in the Story/Context column instead. Merge translations and name variants; keep the most widely recognized public name, with a local/original name in parentheses when useful.
+
+Exclude any entity whose activity in this window is primarily NSFW/adult-flagged content.
 
 For each entity, report in a numbered table with these exact columns:
-Rank | Entity Name (original script + English translation if non-English) |
-Entity Type (Organization / Person / Product / Event / Place / Topic) |
-Engagement Found (likes + reposts + replies YOUR SEARCH actually returned
-for this entity within the stated window — not an estimate) | Example post
-link(s) or handle(s), noting region/language, if you can identify them |
-Driver (one line on what drove the activity)
+Rank | Entity Name (original script + English translation if non-English) | Entity Type (Organization / Person / Product / Event / Place / Topic) | Story/Context (a short phrase on the specific post driving this entity's activity, if the entity name alone doesn't capture it) | Engagement Found (likes + reposts + replies on the entity's ORIGINAL posts only — YOUR SEARCH actually returned for this entity within the stated window — not an estimate) | Example post link(s) or handle(s), noting region/language, if you can identify them | Driver (one line on what drove the activity)
 
-ALWAYS return 10 entities, ranked by Engagement Found, highest first. Only
-write "not available" if your search for that entity returns zero results
-within the stated window. If your final list still skews heavily toward
-one region or English-language posts despite the above, say so explicitly
-at the top of your answer.`;
+Return 10 entities if 10 have qualifying evidence; otherwise return fewer — do not pad the list to reach 10. Rank by Engagement Found, highest first, where available. An entity may still be reported even when no reliable Engagement Found figure exists for it — write "not available" in that field rather than omitting the entity or inventing a number. If your final list still skews heavily toward one region or English-language posts despite the above, say so explicitly at the top of your answer.`;
 
-const GROK_COUNTRY = `Using your access to live X (Twitter) activity, identify the 10 entities
-in {CATEGORY} that X users in {COUNTRY} engaged with most in the last 7
-days (including today). Before doing anything else, determine today's
-actual date, calculate the exact 7-day window that covers (today minus 6
-days) through today, and state that date range at the very top of your
-answer.
+const GROK_COUNTRY = `Using your access to live X (Twitter) activity, identify the 10 entities in {CATEGORY} that X users in {COUNTRY} engaged with most in the 7 complete UTC days ending yesterday (today is excluded, since it is not yet a complete day). Before doing anything else, determine today's actual date in UTC, then calculate that exact 7-day window — (today's UTC date minus 7 days) through (today's UTC date minus 1 day), inclusive — and state that UTC date range at the very top of your answer.
 
-IMPORTANT — focus specifically on {COUNTRY}. Use this language mapping to
-decide which language(s) to search in — do not guess, use exactly this
-table:
+IMPORTANT — focus specifically on {COUNTRY}. Use this language mapping to decide which language(s) to search in — do not guess, use exactly this table:
 
 France            -> French
 Sweden            -> Swedish
@@ -770,43 +659,30 @@ Finland           -> Finnish AND Swedish (both official — search both)
 United Kingdom    -> English
 Canada            -> English AND French (both official — search both)
 
-If {COUNTRY} is not in this list, determine its official primary
-language(s) yourself before searching.
+If {COUNTRY} is not in this list, determine its official primary language(s) yourself before searching.
 
-Actively include posts in {COUNTRY}'s own language(s) from the table
-above, not just English-language posts that merely mention {COUNTRY}. For
-Finland and Canada specifically, check posts in EACH of their two official
-languages — do not pick only one.
+Actively include posts in {COUNTRY}'s own language(s) from the table above, not just English-language posts that merely mention {COUNTRY}. For Finland and Canada specifically, check posts in EACH of their two official languages — do not pick only one.
 
-When you find an entity that trends primarily in a native-language post,
-report its name in its ORIGINAL script/language, with an English
-translation in parentheses if helpful.
+Country scope rule: Count posts from accounts based in {COUNTRY} (by profile location/language signals), regardless of whether a specific post's topic has a local angle. A {COUNTRY}-based account posting about a purely international story still counts fully toward {COUNTRY}'s coverage.
 
-Identify the 10 entities with the most engagement within your stated
-7-day window, from {COUNTRY}. Do not include posts from before that
-window, even if highly relevant — exclude them and move to the next entity
-instead.
+Original posts only: only count posts authored by the entity itself. Exclude the entity's own reposts/retweets of other users' content from both the candidate list and the engagement count — a repost is not the entity's own content and should not inflate its figure. Count a viral original post once, as a single item, even if it is reposted many times by other users — do not create a duplicate entry for each repost of the same original post; let those reposts contribute to that post's own reply/repost/like counts instead.
 
-Do not restrict the list to any particular kind of entity — include whatever
-appears, whether that is an organisation, a person, a product, an event, a
-place or a topic.
+When you find an entity that trends primarily in a native-language post, report its name in its ORIGINAL script/language, with an English translation in parentheses if helpful.
+
+Identify the 10 entities with the most engagement within your stated 7-day window, from {COUNTRY}. Do not include posts from before that window, even if highly relevant — exclude them and move to the next entity instead.
+
+Do not restrict the list to any particular kind of entity — include whatever appears, whether that is an organisation, a person, a product, an event, a place or a topic. Do not rank countries, cities, or regions as the entity unless that place is itself the cultural/commercial product being covered (e.g. a football club or company named after a place, a regional dish, a place-branded institution).
+
+Prefer named entities over story-shaped descriptions — report the entity itself, not a headline-style phrase; put that longer detail in the Story/Context column instead. Merge translations and name variants; local/original name first, English in parentheses when useful.
+
+Exclude any entity whose activity in this window is primarily NSFW/adult-flagged content.
 
 For each entity, report in a numbered table with these exact columns:
-Rank | Entity Name (original script + English translation if non-English) |
-Entity Type (Organization / Person / Product / Event / Place / Topic) |
-Engagement Found (likes + reposts + replies YOUR SEARCH actually returned
-for this entity within the stated window — not an estimate) | Example post
-link(s) or handle(s), noting native-language vs English, if you can
-identify them | Driver (one line on what drove the activity)
+Rank | Entity Name (original script + English translation if non-English) | Entity Type (Organization / Person / Product / Event / Place / Topic) | Story/Context (a short phrase on the specific post driving this entity's activity, if the entity name alone doesn't capture it) | Engagement Found (likes + reposts + replies on the entity's ORIGINAL posts only — YOUR SEARCH actually returned for this entity within the stated window — not an estimate) | Example post link(s) or handle(s), noting native-language vs English, if you can identify them | Driver (one line on what drove the activity)
 
-ALWAYS return 10 entities, ranked by Engagement Found, highest first. Only
-write "not available" if your search for that entity returns zero results
-within the stated window.
+Return 10 entities if 10 have qualifying evidence; otherwise return fewer — do not pad the list to reach 10. Rank by Engagement Found, highest first, where available. An entity may still be reported even when no reliable Engagement Found figure exists for it — write "not available" in that field rather than omitting the entity or inventing a number.
 
-If you cannot isolate {COUNTRY} or that date range from X's own location/
-engagement signals, or results skew heavily toward English-language posts
-despite the above, say so explicitly at the top of your answer and state
-what scope your answer actually covers.`;
+If you cannot isolate accounts based in {COUNTRY}, or results skew heavily toward English-language posts despite the above, say so explicitly at the top of your answer and state what scope your answer actually covers.`;
 
 const TIKTOK_STATIC = `No mainstream LLM (Claude, ChatGPT, Grok, Meta AI, Perplexity) has a
 verified data partnership with TikTok. Two options, in order of
@@ -880,9 +756,9 @@ function fillTemplate(tmpl, category, country, platformLabel, engagementMetric) 
   out = out.replaceAll("{COUNTRY}", country || "");
   out = out.replaceAll("{PLATFORM}", platformLabel || "");
   out = out.replaceAll("{ENGAGEMENT_METRIC}", engagementMetric || "");
-  // {TIMEZONE} and {LOCAL_LANGUAGES} are intentionally left unresolved —
-  // the prompt's own fallback logic ("If {TIMEZONE} is empty, use UTC...")
-  // is designed to trigger when the model sees the placeholder still in place.
+  // TIMEZONE and LOCAL_LANGUAGES placeholders were removed from all templates —
+  // Curated News now hardcodes UTC and ties language search to Pass 0's own
+  // source list (Worldwide) or the fixed language table (Country-Specific).
   return out;
 }
 
@@ -926,7 +802,7 @@ function render() {
 
   const platformLabelForFill = (platform.id === "facebook") ? "Facebook" : (platform.id === "instagram" ? "Instagram" : "");
   const engagementMetric = (platform.id === "facebook") ? "reactions + comments + shares"
-    : (platform.id === "instagram") ? "likes + comments + reel views"
+    : (platform.id === "instagram") ? "likes + comments"
     : "";
   const filled = fillTemplate(
     template,
