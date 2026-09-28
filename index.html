@@ -476,9 +476,9 @@ Local retrieved = distinct qualifying articles you inspected that:
 
 International retrieved = distinct qualifying on-topic international articles you inspected inside the same window.
 
-Additional headlines seen = extra matching headlines found in search results inside the window that you did not open. Count only real headlines you saw. Do not use a search engine's "About X results" figure.
+Additional headlines seen = extra matching headlines from outlets based in {COUNTRY} or that country's domains, found in search results inside the window, that you did not open. Count only real local headlines you saw. Do not use a search engine's "About X results" figure. Do not add headlines from foreign outlets to this count.
 
-Article count = Local retrieved + Additional headlines seen. International retrieved is NOT included in Article count — MACS never counts foreign-outlet coverage in a country-scoped run, so including it here would overstate entities that also get international press. Report International retrieved in its own table column instead, for reference only.
+Article count = Local retrieved + Additional headlines seen. International retrieved is NOT included in Article count.
 
 Syndication:
 Identical mirrored copies count as 1.
@@ -505,7 +505,7 @@ Then return this table:
 Rank | Entity Name | Entity Type | Article count | International Coverage (International retrieved — reported for reference only, NOT included in Article count) | Example outlets | Example article URLs | Driver
 
 Table rules:
-- Article count = Local retrieved + Additional headlines seen. International retrieved is excluded from this total and reported in its own column instead.
+- Article count = Local retrieved + Additional headlines seen (local outlets / local headlines only). International retrieved is excluded from this total and reported in its own column instead. Do not add foreign-outlet headlines to Article count.
 - Rank by Article count, highest first.
 - Return 10 rows only if 10 entities have evidence. Otherwise return fewer. Do not pad.
 - All count columns must be integers or "not available".
@@ -531,43 +531,11 @@ Rank | Entity Name (original script + English translation if non-English) | Enti
 
 Return 10 entities if 10 have qualifying evidence; otherwise return fewer — do not pad the list to reach 10. Rank by Engagement Found, highest first, where available. An entity may still be reported even when no reliable Engagement Found figure exists for it — write "not available" in that field rather than omitting the entity or inventing a number. If your final list still skews heavily toward one region, language, or English-language subreddits despite the above, say so explicitly at the top of your answer.`;
 
-const REDDIT_COUNTRY = `Search Reddit for discussion of {CATEGORY} relevant to {COUNTRY}, posted in the 7 complete UTC days ending yesterday (today is excluded, since it is not yet a complete day). Before doing anything else, determine today's actual date in UTC, then calculate that exact 7-day window — (today's UTC date minus 7 days) through (today's UTC date minus 1 day), inclusive — and state that UTC date range at the very top of your answer.
-
-IMPORTANT — focus specifically on {COUNTRY}. Use this language mapping to decide which language(s) to search in — do not guess, use exactly this table:
-
-France            -> French
-Sweden            -> Swedish
-Netherlands       -> Dutch
-Japan             -> Japanese
-Australia         -> English
-Germany           -> German
-United States     -> English
-Finland           -> Finnish AND Swedish (both official — search both)
-United Kingdom    -> English
-Canada            -> English AND French (both official — search both)
-
-If {COUNTRY} is not in this list, determine its official primary language(s) yourself before searching.
-
-Reddit is organised by subreddit, not by country — search {COUNTRY}'s national subreddit (e.g. r/france, r/germany) AND relevant language-specific subreddits in {COUNTRY}'s own language(s) from the table above, not just English-language or global subreddits that merely mention {COUNTRY}. For Finland and Canada specifically, search subreddits in EACH of their two official languages — do not pick only one.
-
-Country scope rule: Count discussion from subreddits associated with or primarily used by {COUNTRY}, regardless of whether a specific post's topic has a local angle. A post from a {COUNTRY}-based subreddit about an international story still counts fully toward {COUNTRY}'s coverage.
-
-When you find an entity that trends primarily in a native-language subreddit, report its name in its ORIGINAL script/language, with an English translation in parentheses if helpful.
-
-Identify the 10 entities most discussed within your stated 7-day window, relevant to {COUNTRY}. Do not include posts from before that window, even if highly relevant — exclude them and move to the next entity instead.
-
-Do not restrict the list to any particular kind of entity — include whatever appears, whether that is an organisation, a person, a product, an event, a place or a topic. Do not rank countries, cities, or regions as the entity unless that place is itself the cultural/commercial product being covered (e.g. a football club or company named after a place, a regional dish, a place-branded institution).
-
-Prefer named entities over story-shaped descriptions — report the entity itself, not a headline-style phrase; put that longer detail in the Story/Context column instead. Merge translations and name variants; local/original name first, English in parentheses when useful.
-
-Exclude any entity whose discussion in this window is primarily NSFW/adult-flagged content.
-
-For each entity, run a dedicated search for that entity's name together with {CATEGORY} and your stated 7-day window, then report in a numbered table with these exact columns:
-Rank | Entity Name (original script + English translation if non-English) | Entity Type (Organization / Person / Product / Event / Place / Topic) | Story/Context (a short phrase on the specific post, thread, or event driving this entity's activity, if the entity name alone doesn't capture it) | Engagement Found (upvotes + comments YOUR SEARCH actually returned for this entity within the stated window — not an estimate, just what you found) | Subreddit(s) (r/...) + thread link, if you can identify them | Driver (one line on what drove the discussion)
-
-Return 10 entities if 10 have qualifying evidence; otherwise return fewer — do not pad the list to reach 10. Rank by Engagement Found, highest first, where available. An entity may still be reported even when no reliable Engagement Found figure exists for it — write "not available" in that field rather than omitting the entity or inventing a number.
-
-If you cannot isolate subreddits associated with {COUNTRY}, or results skew heavily toward English-language subreddits despite the above, say so explicitly at the top of your answer and state what scope your answer actually covers.`;
+// REDDIT_COUNTRY deleted. MACS has no per-country Reddit data (every MACS
+// Reddit document is country: "zz", and MACS rejects a Reddit request that
+// includes a location) — so a Reddit + country comparison was structurally
+// invalid. The Location dropdown stays locked to "All" whenever Reddit is
+// selected (see updateLocationDropdown() and PLATFORMS' worldwideOnly flag).
 
 const META_WORLDWIDE = `Search for {PLATFORM} activity related to {CATEGORY} worldwide, from the 7 complete UTC days ending yesterday (today is excluded, since it is not yet a complete day). Before doing anything else, determine today's actual date in UTC, then calculate that exact 7-day window — (today's UTC date minus 7 days) through (today's UTC date minus 1 day), inclusive — and state that UTC date range at the very top of your answer.
 
@@ -823,7 +791,7 @@ function render() {
 
   let template;
   if (platform.id === "curated_news") template = isWorldwide ? CURATED_NEWS_WORLDWIDE : CURATED_NEWS_COUNTRY;
-  else if (platform.id === "reddit") template = isWorldwide ? REDDIT_WORLDWIDE : REDDIT_COUNTRY;
+  else if (platform.id === "reddit") template = REDDIT_WORLDWIDE;
   else if (platform.id === "facebook" || platform.id === "instagram") template = isWorldwide ? META_WORLDWIDE : META_COUNTRY;
   else if (platform.id === "x") template = isWorldwide ? GROK_WORLDWIDE : GROK_COUNTRY;
 
