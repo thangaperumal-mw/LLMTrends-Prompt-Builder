@@ -278,7 +278,7 @@ const LOCATIONS = ["All","France","Sweden","Netherlands","Japan","Australia","Ge
 
 const PLATFORMS = [
   { id: "curated_news", label: "Curated News", tool: "Claude / ChatGPT" },
-  { id: "reddit",       label: "Reddit",        tool: "Perplexity" },
+  { id: "reddit",       label: "Reddit",        tool: "Perplexity", worldwideOnly: true },
   { id: "facebook",     label: "Facebook",      tool: "Meta AI" },
   { id: "instagram",    label: "Instagram",     tool: "Meta AI" },
   { id: "x",            label: "X",             tool: "Grok" },
@@ -363,8 +363,8 @@ Additional headlines seen = extra matching headlines found in search results ins
 Article count = Regional retrieved + Global retrieved + Additional headlines seen.
 
 Syndication:
-The same wire story reprinted globally counts as 1.
-An outlet that uses its own headline or adds original local reporting counts as +1.
+Identical mirrored copies count as 1.
+An outlet that uses its own headline or adds original reporting counts as +1.
 
 Do not estimate pages you never saw.
 Do not invent a worldwide index total.
@@ -372,6 +372,7 @@ Do not invent a worldwide index total.
 Entity rules:
 Allowed types: Organization, Person, Product, Event, Place, Topic.
 Prefer named entities over vague topics.
+Report the entity itself (e.g. "Honda"), not a headline-style phrase (e.g. not "Honda head-gasket warranty extension") — put the story in the Driver column instead.
 Merge translations and name variants.
 Keep the most widely recognized public name; add a local/original name in parentheses when useful.
 Do not rank countries, cities, or regions as the entity unless that place is itself the cultural/commercial product being covered.
@@ -477,7 +478,7 @@ International retrieved = distinct qualifying on-topic international articles yo
 
 Additional headlines seen = extra matching headlines found in search results inside the window that you did not open. Count only real headlines you saw. Do not use a search engine's "About X results" figure.
 
-Article count = Local retrieved + International retrieved + Additional headlines seen.
+Article count = Local retrieved + Additional headlines seen. International retrieved is NOT included in Article count — MACS never counts foreign-outlet coverage in a country-scoped run, so including it here would overstate entities that also get international press. Report International retrieved in its own table column instead, for reference only.
 
 Syndication:
 Identical mirrored copies count as 1.
@@ -488,6 +489,8 @@ Do not invent an index-wide total.
 
 Entity rules:
 Allowed types: Organization, Person, Product, Event, Place, Topic.
+Prefer named entities over vague topics.
+Report the entity itself (e.g. "Honda"), not a headline-style phrase (e.g. not "Honda head-gasket warranty extension") — put the story in the Driver column instead.
 Merge aliases, translations, and transliterations.
 Local/original name first, English in parentheses when useful.
 Do not rank countries, cities, or regions as the entity unless that place is itself the cultural/commercial product being covered.
@@ -499,10 +502,10 @@ Always write this first:
 
 Then return this table:
 
-Rank | Entity Name | Entity Type | Article count | Example outlets | Example article URLs | Driver
+Rank | Entity Name | Entity Type | Article count | International Coverage (International retrieved — reported for reference only, NOT included in Article count) | Example outlets | Example article URLs | Driver
 
 Table rules:
-- Article count = Local retrieved + International retrieved + Additional headlines seen.
+- Article count = Local retrieved + Additional headlines seen. International retrieved is excluded from this total and reported in its own column instead.
 - Rank by Article count, highest first.
 - Return 10 rows only if 10 entities have evidence. Otherwise return fewer. Do not pad.
 - All count columns must be integers or "not available".
@@ -627,7 +630,7 @@ const GROK_WORLDWIDE = `Using your access to live X (Twitter) activity, identify
 
 IMPORTANT — ignore my location entirely for this task. Do not default to English-language or my-region posts. Actively check activity across multiple regions and languages — e.g. English, French, German, Japanese, Portuguese, Spanish, Hindi, Arabic — as starting anchors, not an exhaustive list, so no single region or language dominates by default.
 
-Original posts only: only count posts authored by the entity itself. Exclude the entity's own reposts/retweets of other users' content from both the candidate list and the engagement count — a repost is not the entity's own content and should not inflate its figure. Count a viral original post once, as a single item, even if it is reposted many times by other users — do not create a duplicate entry for each repost of the same original post; let those reposts contribute to that post's own reply/repost/like counts instead.
+Original posts only, from any author: count original posts that mention the entity, regardless of who wrote them — do not restrict to posts the entity itself authored. A recall, controversy, or campaign that drives many different users to post about the entity should be credited to that entity, not just the entity's own account activity. Exclude reposts/retweets from the candidate list and engagement count as separate items — a repost is not a new original post; reposts and replies count toward the original post they are reposting/replying to, not as their own entry. Count a viral original post once, as a single item, even if it is reposted many times — let those reposts and replies feed that original post's own engagement count instead of creating duplicate entries.
 
 When you find an entity that trends primarily in a non-English-language post, report its name in its ORIGINAL script/language, with an English translation in parentheses if helpful.
 
@@ -640,7 +643,7 @@ Prefer named entities over story-shaped descriptions — report the entity itsel
 Exclude any entity whose activity in this window is primarily NSFW/adult-flagged content.
 
 For each entity, report in a numbered table with these exact columns:
-Rank | Entity Name (original script + English translation if non-English) | Entity Type (Organization / Person / Product / Event / Place / Topic) | Story/Context (a short phrase on the specific post driving this entity's activity, if the entity name alone doesn't capture it) | Engagement Found (likes + reposts + replies on the entity's ORIGINAL posts only — YOUR SEARCH actually returned for this entity within the stated window — not an estimate) | Example post link(s) or handle(s), noting region/language, if you can identify them | Driver (one line on what drove the activity)
+Rank | Entity Name (original script + English translation if non-English) | Entity Type (Organization / Person / Product / Event / Place / Topic) | Story/Context (a short phrase on the specific post driving this entity's activity, if the entity name alone doesn't capture it) | Engagement Found (likes + reposts + replies YOUR SEARCH actually returned on original posts that mention this entity, from any author, within the stated window — not an estimate) | Example post link(s) or handle(s), noting region/language, if you can identify them | Driver (one line on what drove the activity)
 
 Return 10 entities if 10 have qualifying evidence; otherwise return fewer — do not pad the list to reach 10. Rank by Engagement Found, highest first, where available. An entity may still be reported even when no reliable Engagement Found figure exists for it — write "not available" in that field rather than omitting the entity or inventing a number. If your final list still skews heavily toward one region or English-language posts despite the above, say so explicitly at the top of your answer.`;
 
@@ -665,7 +668,7 @@ Actively include posts in {COUNTRY}'s own language(s) from the table above, not 
 
 Country scope rule: Count posts from accounts based in {COUNTRY} (by profile location/language signals), regardless of whether a specific post's topic has a local angle. A {COUNTRY}-based account posting about a purely international story still counts fully toward {COUNTRY}'s coverage.
 
-Original posts only: only count posts authored by the entity itself. Exclude the entity's own reposts/retweets of other users' content from both the candidate list and the engagement count — a repost is not the entity's own content and should not inflate its figure. Count a viral original post once, as a single item, even if it is reposted many times by other users — do not create a duplicate entry for each repost of the same original post; let those reposts contribute to that post's own reply/repost/like counts instead.
+Original posts only, from any author: count original posts that mention the entity, regardless of who wrote them — do not restrict to posts the entity itself authored. A recall, controversy, or campaign that drives many different users to post about the entity should be credited to that entity, not just the entity's own account activity. Exclude reposts/retweets from the candidate list and engagement count as separate items — a repost is not a new original post; reposts and replies count toward the original post they are reposting/replying to, not as their own entry. Count a viral original post once, as a single item, even if it is reposted many times — let those reposts and replies feed that original post's own engagement count instead of creating duplicate entries.
 
 When you find an entity that trends primarily in a native-language post, report its name in its ORIGINAL script/language, with an English translation in parentheses if helpful.
 
@@ -678,7 +681,7 @@ Prefer named entities over story-shaped descriptions — report the entity itsel
 Exclude any entity whose activity in this window is primarily NSFW/adult-flagged content.
 
 For each entity, report in a numbered table with these exact columns:
-Rank | Entity Name (original script + English translation if non-English) | Entity Type (Organization / Person / Product / Event / Place / Topic) | Story/Context (a short phrase on the specific post driving this entity's activity, if the entity name alone doesn't capture it) | Engagement Found (likes + reposts + replies on the entity's ORIGINAL posts only — YOUR SEARCH actually returned for this entity within the stated window — not an estimate) | Example post link(s) or handle(s), noting native-language vs English, if you can identify them | Driver (one line on what drove the activity)
+Rank | Entity Name (original script + English translation if non-English) | Entity Type (Organization / Person / Product / Event / Place / Topic) | Story/Context (a short phrase on the specific post driving this entity's activity, if the entity name alone doesn't capture it) | Engagement Found (likes + reposts + replies YOUR SEARCH actually returned on original posts that mention this entity, from any author, within the stated window — not an estimate) | Example post link(s) or handle(s), noting native-language vs English, if you can identify them | Driver (one line on what drove the activity)
 
 Return 10 entities if 10 have qualifying evidence; otherwise return fewer — do not pad the list to reach 10. Rank by Engagement Found, highest first, where available. An entity may still be reported even when no reliable Engagement Found figure exists for it — write "not available" in that field rather than omitting the entity or inventing a number.
 
@@ -751,6 +754,21 @@ const copyBtn = document.getElementById("copyBtn");
 
 function getPlatform(id) { return PLATFORMS.find(p => p.id === id); }
 
+function updateLocationDropdown() {
+  const platform = getPlatform(platformSel.value);
+  const previousValue = locationSel.value;
+  if (platform && platform.worldwideOnly) {
+    fillSelectPlain("location", ["All"]);
+    locationSel.value = "All";
+    locationSel.disabled = true;
+  } else {
+    locationSel.disabled = false;
+    fillSelectPlain("location", LOCATIONS);
+    // Preserve the previous selection if it's still a valid option, else default to All
+    locationSel.value = LOCATIONS.includes(previousValue) ? previousValue : "All";
+  }
+}
+
 function fillTemplate(tmpl, category, country, platformLabel, engagementMetric) {
   let out = tmpl.replaceAll("{CATEGORY}", category);
   out = out.replaceAll("{COUNTRY}", country || "");
@@ -779,6 +797,15 @@ function render() {
   toolBadge.className = "badge tool";
   toolBadge.textContent = "Tool: " + platform.tool;
   badgesEl.appendChild(toolBadge);
+
+  if (platform.worldwideOnly) {
+    const scopeBadge = document.createElement("span");
+    scopeBadge.className = "badge tool";
+    scopeBadge.style.background = "#FDEEEE";
+    scopeBadge.style.color = "#8A3A3A";
+    scopeBadge.textContent = "Worldwide only — MACS has no per-country Reddit data";
+    badgesEl.appendChild(scopeBadge);
+  }
 
   // Static (non-LLM) platforms
   if (platform.id === "tiktok" || platform.id === "google_trends") {
@@ -816,7 +843,8 @@ function render() {
   promptNote.innerHTML = "<strong>Remember:</strong> turn on web search before sending this (Claude/ChatGPT: \"+\" menu; Perplexity: Focus mode = Web), and copy the model's self-stated date range into the Tracker's LLM start/end date columns.";
 }
 
-[platformSel, categorySel, locationSel].forEach(el => el.addEventListener("change", render));
+platformSel.addEventListener("change", () => { updateLocationDropdown(); render(); });
+[categorySel, locationSel].forEach(el => el.addEventListener("change", render));
 
 copyBtn.addEventListener("click", () => {
   navigator.clipboard.writeText(promptOut.textContent).then(() => {
@@ -830,6 +858,7 @@ copyBtn.addEventListener("click", () => {
   });
 });
 
+updateLocationDropdown();
 render();
 </script>
 </body>
