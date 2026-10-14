@@ -293,12 +293,13 @@ Maximise recall inside the rules below. Do not invent an index-wide total.
 
 TASK: Rank entities in {CATEGORY} by news coverage worldwide
 DATE WINDOW: 7 complete UTC days, ending yesterday (today is excluded, since it is not yet a complete day)
-LANGUAGES TO SEARCH: determined by the Pass 0 source list below — no fixed list
 
 Before searching, determine today's date in UTC from live information. The date window is the 7 complete UTC days ending yesterday — that is, (today's UTC date minus 7 days) through (today's UTC date minus 1 day), inclusive. State this exact UTC date range at the top of the answer.
 
 Language rule:
-Do not search using a fixed list of languages. Once Pass 0 identifies your source list, search each source in that source's own primary language — a French outlet gets French-language queries, a Japanese outlet gets Japanese-language queries, and so on. Do not query a native-language outlet using only English keywords; this is how non-English coverage gets silently missed. Name every language actually searched in Coverage.
+Search at least these languages, even if your outlet list is thin: English, Spanish or Portuguese, French or German, Arabic, Hindi or another major South Asian language, Japanese or Korean, and Chinese.
+Language is a search hint so non-English coverage is not skipped. It is not a filter. Do not drop an entity because the article is in another language.
+Name every language actually searched in Coverage. If you skipped one of the required languages, say so in Limits.
 
 Category meaning:
 Interpret {CATEGORY} as a Google Trends-style theme. Rank entities that news outlets across countries actually covered inside that theme.
@@ -309,40 +310,28 @@ Do not silently return a US/UK English list.
 A valid worldwide list should include entities whose coverage originated in more than one region when the sample supports it.
 
 Anti-bias rule:
-Use the worldwide scope and Pass 0's own source languages to set the corpus — not a fixed language list, and not my account location, IP address, interface language, or physical location.
+Use the worldwide scope and the required languages above. Do not use my account location, IP address, interface language, or physical location.
 
-Pass 0 — build a multi-region source list yourself
-Before ranking, identify 12–20 sources spanning multiple regions, including:
-- major outlets in the Americas, Europe, Middle East/Africa, and Asia-Pacific
-- category trade press for {CATEGORY}
-- non-.com domains where possible (.es, .br, .fr, .de, .in, .jp, .ar, .mx, .za, etc.)
-Write the source list in Method. Then search those sources. Do not wait for me to supply outlets.
+Pass 0 — use this minimum source set, then add if needed
+Start from these regions. Do not drop a region:
+- Americas (e.g. Reuters, AP, Variety or a major national paper)
+- Europe (e.g. BBC or The Guardian, plus one non-English outlet such as Le Monde or Deutsche Welle)
+- Middle East / Africa (e.g. Al Jazeera or a major regional paper)
+- East Asia (e.g. one Japanese outlet and one Korean or Chinese outlet)
+- South / Southeast Asia (e.g. Times of India or a major Indonesian, Thai, or Philippine outlet)
+- Latin America (e.g. one Spanish- or Portuguese-language outlet)
+- Category trade press for {CATEGORY}
+Write the outlets you actually searched in Method. You may add outlets. You may not skip a region.
 
-Three-pass search:
+Search:
+1) Discover candidates: {CATEGORY} news in the date window, in English, and the same query in each required region's language. Also run event-type queries (awards, launches, releases, festivals, rankings, deaths).
+2) For each candidate that looks like it will rank, search the entity name plus the date window, in English and in the local name if different.
+Do not run a separate open-every-article pass. Count articles and headlines you actually retrieved.
+Collect 15–25 candidate entities, then rank the ones with evidence.
 
-Pass 1 — discover candidates
-Run all of these as separate queries:
-1) {CATEGORY} news in the date window, in English
-2) the same query in each source's own primary language, per the Language rule above
-3) {CATEGORY} + date window on regional domains/outlets from Pass 0
-4) event-type queries (awards, launches, releases, matches, festivals, rankings, recalls, openings, deaths)
-Do not use a single English query and call it worldwide.
-Collect 15–25 candidate entities.
-
-Pass 2 — count each candidate regionally
-For each promising candidate, search:
-- local/original name + date window
-- English name + date window
-- name + regional domains/outlets from Pass 0
-Open matching articles. Most of Regional retrieved should come from this pass.
-
-Pass 3 — global/English on-topic coverage
-Search the same entities in major international/English outlets when the article is about that entity in {CATEGORY}.
-Put these in Global retrieved.
-
-Retrieval quota:
-Build a working set of at least 80 qualifying articles if they exist.
-If you retrieve fewer, say how many and why. Do not rank from 10 first-page links.
+Retrieval:
+Rank from the articles and headlines you actually retrieved in the window. Do not invent an index-wide total.
+If the set is thin, say how many you inspected and why. Do not stop the search early just to write Limits.
 
 Eligible articles:
 Count news reports, features, interviews, reviews, recaps, explainers, trade-press stories, and dated newsroom/press articles.
@@ -354,7 +343,7 @@ What to count:
 Regional retrieved = distinct qualifying articles you inspected that:
 - were published inside the stated 7-day window
 - come from regional/local-language outlets or non-.com country domains
-- name the entity in the headline, lead, or as a repeated subject
+- name the entity anywhere in the article (headline, lead, or body). Count each article once, even if the entity is mentioned several times.
 
 Global retrieved = distinct qualifying international/English articles you inspected inside the same window.
 
@@ -363,8 +352,8 @@ Additional headlines seen = extra matching headlines found in search results ins
 Article count = Regional retrieved + Global retrieved + Additional headlines seen.
 
 Syndication:
-Identical mirrored copies count as 1.
-An outlet that uses its own headline or adds original reporting counts as +1.
+Count every published copy. Do not collapse wire reprints or mirrored copies to 1. Each outlet copy is a separate article.
+An outlet that uses its own headline or adds original reporting still counts as its own article.
 
 Do not estimate pages you never saw.
 Do not invent a worldwide index total.
@@ -379,8 +368,8 @@ Do not rank countries, cities, or regions as the entity unless that place is its
 
 Always write this first:
 1) Coverage: confirm Worldwide; list languages/regions represented; state English-share; state the exact UTC date window used
-2) Method: Pass 0 outlets, queries, entity-name searches, articles inspected, syndication rule used
-3) Limits: languages missed, paywalls, why the set is under 80 if it is
+2) Method: outlets searched, queries, entity-name searches, articles inspected, syndication rule used
+3) Limits: languages missed, paywalls, how many articles you actually inspected
 
 Then return this table:
 
@@ -389,10 +378,9 @@ Rank | Entity Name | Entity Type | Article count | Regions represented | Example
 Table rules:
 - Article count = Regional retrieved + Global retrieved + Additional headlines seen.
 - Rank by Article count, highest first.
-- Return 10 rows only if 10 entities have evidence. Otherwise return fewer. Do not pad.
 - All count columns must be integers or "not available".
 - Regions represented: regions/countries actually present in the sample, not a claim of complete global coverage.
-- At least 1 in-window article URL per row; 2 when available.
+- Give at least 1 in-window article URL per row when you have one; 2 when available. An entity may still be listed if you have in-window headlines you actually saw but no opened URL. Write "not available" in the URL column. Do not drop the entity for lack of a URL. Do not invent a URL.
 - Driver: one line on the news event that drove the coverage, not the sampling bias.`;
 
 const CURATED_NEWS_COUNTRY = `You are producing a reproducible news-trend extract, not a guess.
@@ -458,9 +446,9 @@ Pass 3 — international on-topic coverage
 Search the same entities in major international outlets only when the article is about that {COUNTRY} entity or {COUNTRY}'s {CATEGORY} scene.
 Put these in International retrieved.
 
-Retrieval quota:
-Build a working set of at least 80 qualifying articles if they exist.
-If you retrieve fewer, say how many and why. Do not rank from 10 first-page links.
+Retrieval:
+Rank from the articles and headlines you actually retrieved in the window. Do not invent an index-wide total.
+If the set is thin, say how many you inspected and why. Do not stop the search early just to write Limits.
 
 Eligible articles:
 Count news reports, features, interviews, reviews, recaps, explainers, trade-press stories, and dated newsroom/press articles.
@@ -472,7 +460,7 @@ What to count:
 Local retrieved = distinct qualifying articles you inspected that:
 - were published inside the stated 7-day window
 - come from outlets in {COUNTRY} or that country's domains
-- name the entity in the headline, lead, or as a repeated subject
+- name the entity anywhere in the article (headline, lead, or body). Count each article once, even if the entity is mentioned several times.
 
 International retrieved = distinct qualifying on-topic international articles you inspected inside the same window.
 
@@ -481,8 +469,8 @@ Additional headlines seen = extra matching headlines from outlets based in {COUN
 Article count = Local retrieved + Additional headlines seen. International retrieved is NOT included in Article count.
 
 Syndication:
-Identical mirrored copies count as 1.
-A local outlet that uses its own headline or adds reporting counts as +1.
+Count every published copy. Do not collapse wire reprints or mirrored copies to 1. Each outlet copy is a separate article.
+A local outlet that uses its own headline or adds reporting still counts as its own article.
 
 Do not estimate pages you never saw.
 Do not invent an index-wide total.
@@ -498,7 +486,7 @@ Do not rank countries, cities, or regions as the entity unless that place is its
 Always write this first:
 1) Coverage: country, languages, Pass 0 outlets, English-share, exact UTC date window used
 2) Method: queries, entity-name searches, articles inspected, syndication rule used
-3) Limits: paywalls, missed languages, why the set is under 80 if it is
+3) Limits: paywalls, missed languages, how many articles you actually inspected
 
 Then return this table:
 
@@ -507,9 +495,8 @@ Rank | Entity Name | Entity Type | Article count | International Coverage (Inter
 Table rules:
 - Article count = Local retrieved + Additional headlines seen (local outlets / local headlines only). International retrieved is excluded from this total and reported in its own column instead. Do not add foreign-outlet headlines to Article count.
 - Rank by Article count, highest first.
-- Return 10 rows only if 10 entities have evidence. Otherwise return fewer. Do not pad.
 - All count columns must be integers or "not available".
-- At least 1 in-window article URL per row; 2 when available.
+- Give at least 1 in-window article URL per row when you have one; 2 when available. An entity may still be listed if you have in-window headlines you actually saw but no opened URL. Write "not available" in the URL column. Do not drop the entity for lack of a URL. Do not invent a URL.
 - Driver: one line on what drove the coverage.`;
 
 const REDDIT_WORLDWIDE = `Search Reddit for discussion of {CATEGORY} worldwide, posted in the 7 complete UTC days ending yesterday (today is excluded, since it is not yet a complete day). Before doing anything else, determine today's actual date in UTC, then calculate that exact 7-day window — (today's UTC date minus 7 days) through (today's UTC date minus 1 day), inclusive — and state that UTC date range at the very top of your answer.
