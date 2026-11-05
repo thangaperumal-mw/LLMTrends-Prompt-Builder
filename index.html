@@ -246,6 +246,16 @@
       </div>
     </div>
 
+    <div class="grid3 metric-field" id="metricFieldWrap" style="display:none; margin-top:14px;">
+      <div>
+        <label for="metric">Metric <span class="optional-tag">(Curated News only)</span></label>
+        <select id="metric">
+          <option value="volume">Volume</option>
+          <option value="surge">Surge</option>
+        </select>
+      </div>
+    </div>
+
     <div class="badges" id="badges"></div>
   </div>
 
@@ -499,6 +509,239 @@ Table rules:
 - Give at least 1 in-window article URL per row when you have one; 2 when available. An entity may still be listed if you have in-window headlines you actually saw but no opened URL. Write "not available" in the URL column. Do not drop the entity for lack of a URL. Do not invent a URL.
 - Driver: one line on what drove the coverage.`;
 
+const CURATED_NEWS_WORLDWIDE_SURGE = `You are producing a reproducible news-SURGE extract, not a guess.
+Maximise recall inside the rules below. Do not invent an index-wide total.
+
+TASK: Rank entities in {CATEGORY} by SURGE in news coverage worldwide — how far above each entity's own normal activity the current coverage is, not the raw volume.
+CURRENT WINDOW: 7 complete UTC days, ending yesterday (today is excluded, since it is not yet a complete day)
+BASELINE WINDOW: the 7 complete UTC days immediately before the Current Window (i.e., days 8–14 before today), same length, non-overlapping
+
+Before searching, determine today's date in UTC from live information. Calculate:
+
+Current Window = (today's UTC date minus 7 days) through (today's UTC date minus 1 day), inclusive
+Baseline Window = (today's UTC date minus 14 days) through (today's UTC date minus 8 days), inclusive
+State both exact UTC date ranges at the top of the answer.
+
+Why this is different from a volume ranking: an entity with 40 articles this week and 4 last week is surging (10x) even though its raw total is modest. An entity with 500 articles every week, steady, is not surging (1x) even though its raw total is large. You are ranking for the first kind of entity, not the second.
+
+Language rule:
+Search at least these languages, even if your outlet list is thin: English, Spanish or Portuguese, French or German, Arabic, Hindi or another major South Asian language, Japanese or Korean, and Chinese.
+Language is a search hint so non-English coverage is not skipped. It is not a filter. Do not drop an entity because the article is in another language.
+Name every language actually searched in Coverage. If you skipped one of the required languages, say so in Limits.
+
+Category meaning:
+Interpret {CATEGORY} as a Google Trends-style theme. Rank entities that news outlets across countries actually covered inside that theme.
+
+Location rule:
+Do not restrict to one country.
+Do not silently return a US/UK English list.
+A valid worldwide list should include entities whose coverage originated in more than one region when the sample supports it.
+
+Anti-bias rule:
+Use the worldwide scope and the required languages above. Do not use my account location, IP address, interface language, or physical location.
+
+Pass 0 — use this minimum source set, then add if needed
+Start from these regions. Do not drop a region:
+- Americas (e.g. Reuters, AP, Variety or a major national paper)
+- Europe (e.g. BBC or The Guardian, plus one non-English outlet such as Le Monde or Deutsche Welle)
+- Middle East / Africa (e.g. Al Jazeera or a major regional paper)
+- East Asia (e.g. one Japanese outlet and one Korean or Chinese outlet)
+- South / Southeast Asia (e.g. Times of India or a major Indonesian, Thai, or Philippine outlet)
+- Latin America (e.g. one Spanish- or Portuguese-language outlet)
+- Category trade press for {CATEGORY}
+Write the outlets you actually searched in Method. You may add outlets. You may not skip a region.
+
+Search:
+1) Discover candidates from the CURRENT WINDOW ONLY: {CATEGORY} news in the date window, in English, and the same query in each required region's language. Also run event-type queries (awards, launches, releases, festivals, rankings, deaths). Surging entities are discovered from what's active now — the baseline check happens after.
+2) For each candidate that looks like it will rank, search the entity name twice — once restricted to the Current Window, once restricted to the Baseline Window — in English and in the local name if different. Do not skip the baseline search; a candidate with no baseline data point has no surge score.
+Do not run a separate open-every-article pass. Count articles and headlines you actually retrieved.
+Collect 15–25 candidate entities, then rank the ones with evidence in the Current Window.
+
+Retrieval:
+Rank from the articles and headlines you actually retrieved in each window. Do not invent an index-wide total for either window.
+If a window's set is thin, say how many you inspected and why. Do not stop the search early just to write Limits.
+
+Eligible articles:
+Count news reports, features, interviews, reviews, recaps, explainers, trade-press stories, and dated newsroom/press articles.
+Local news portals and publisher sites may be counted.
+Do not count Google, Bing, Yahoo, or other search-engine result pages.
+Do not count Wikipedia, social-media posts, search-result snippets, tag pages, stock pages, or search-engine homepages.
+
+What to count — PER WINDOW (do this separately for Current and Baseline):
+Regional retrieved = distinct qualifying articles you inspected that:
+- were published inside that window
+- come from regional/local-language outlets or non-.com country domains
+- name the entity anywhere in the article (headline, lead, or body). Count each article once, even if the entity is mentioned several times.
+
+Global retrieved = distinct qualifying international/English articles you inspected inside that same window.
+
+Additional headlines seen = extra matching headlines found in search results inside that window that you did not open. Count only real headlines you saw. Do not use a search engine's "About X results" figure.
+
+Current Window Count = Regional retrieved + Global retrieved + Additional headlines seen, for the Current Window only.
+Baseline Window Count = Regional retrieved + Global retrieved + Additional headlines seen, for the Baseline Window only.
+
+Surge calculation (multiple, not percentage):
+This is a 7-day vs prior 7-day surge, not a 24-hour surge.
+- If Baseline Window Count >= 1: Surge = Current Window Count / Baseline Window Count. Report as a multiple (e.g. 8.75x). Round to 2 decimal places.
+- If Baseline Window Count = 0 and Current Window Count > 0: this is a New entrant. Do not invent a huge multiple. Label Surge as "New" and apply a floor of Baseline = 1 only for ranking order, so its effective multiple equals its Current Window Count. Do not place New entrants above established entities solely because their baseline is zero; rank them by that floored multiple alongside everyone else, and mark them clearly as New in the table.
+- If both windows are 0, do not include the entity.
+
+Syndication:
+Count every published copy. Do not collapse wire reprints or mirrored copies to 1. Each outlet copy is a separate article. Apply this identically in both windows.
+An outlet that uses its own headline or adds original reporting still counts as its own article.
+
+Do not estimate pages you never saw.
+Do not invent a worldwide index total for either window.
+
+Entity rules:
+Allowed types: Organization, Person, Product, Event, Place, Topic.
+Prefer named entities over vague topics.
+Report the entity itself (e.g. "Honda"), not a headline-style phrase (e.g. not "Honda head-gasket warranty extension") — put the story in the Driver column instead.
+Merge translations and name variants.
+Keep the most widely recognized public name; add a local/original name in parentheses when useful.
+Do not rank countries, cities, or regions as the entity unless that place is itself the cultural/commercial product being covered.
+
+Always write this first:
+1) Coverage: confirm Worldwide; list languages/regions represented; state English-share; state both exact UTC date windows used
+2) Method: outlets searched, queries, entity-name searches, articles inspected in each window, syndication rule used, surge formula used
+3) Limits: languages missed, paywalls, how many articles you actually inspected in each window, any New-entity baseline notes
+
+Then return this table:
+
+Rank | Entity Name | Entity Type | Surge (multiple) | Current Window Count | Baseline Window Count | Regions represented | Example outlets | Example article URLs | Driver
+
+Table rules:
+- Rank by Surge (multiple), highest first. New entrants use the floored multiple (Current / 1) and are marked "New" in the Surge column (e.g. "213x (New)").
+- Current Window Count and Baseline Window Count are each Regional retrieved + Global retrieved + Additional headlines seen for that window.
+- All count columns must be integers, multiples (e.g. 8.75x), or "not available".
+- Regions represented: regions/countries actually present in the sample, not a claim of complete global coverage.
+- Give at least 1 in-window (Current Window) article URL per row when you have one; 2 when available. An entity may still be listed if you have in-window headlines you actually saw but no opened URL. Write "not available" in the URL column. Do not drop the entity for lack of a URL. Do not invent a URL.
+- Driver: one line on the news event that drove the surge, not the sampling bias.`;
+
+const CURATED_NEWS_COUNTRY_SURGE = `You are producing a reproducible news-SURGE extract, not a guess.
+Maximise recall inside the rules below. Do not invent an index-wide total.
+
+TASK: Rank entities in {CATEGORY} by SURGE in news coverage in {COUNTRY} — how far above each entity's own normal local activity the current coverage is, not the raw volume.
+CURRENT WINDOW: 7 complete UTC days, ending yesterday (today is excluded, since it is not yet a complete day)
+BASELINE WINDOW: the 7 complete UTC days immediately before the Current Window (i.e., days 8–14 before today), same length, non-overlapping
+LANGUAGES TO SEARCH: use the language mapping table below — do not guess
+
+Before searching, determine today's date in UTC from live information. Calculate:
+
+Current Window = (today's UTC date minus 7 days) through (today's UTC date minus 1 day), inclusive
+Baseline Window = (today's UTC date minus 14 days) through (today's UTC date minus 8 days), inclusive
+State both exact UTC date ranges at the top of the answer.
+
+Why this is different from a volume ranking: an entity with 12 local articles this week and 4 last week is surging (3x) even though its raw total is modest. An entity with 80 local articles every week, steady, is not surging (1x) even though its raw total is large. You are ranking for the first kind of entity, not the second.
+
+Use this language mapping to decide which language(s) to search in — do not guess, use exactly this table:
+
+France            -> French
+Sweden            -> Swedish
+Netherlands       -> Dutch
+Japan             -> Japanese
+Australia         -> English
+Germany           -> German
+United States     -> English
+Finland           -> Finnish AND Swedish (both official — search both)
+United Kingdom    -> English
+Canada            -> English AND French (both official — search both)
+
+If {COUNTRY} is not in this list, determine its official primary language(s) yourself before searching. Name every language actually searched in Coverage.
+
+Category meaning:
+Interpret {CATEGORY} as a Google Trends-style theme. Rank entities covered in that theme by outlets based in {COUNTRY}, regardless of whether the specific story has a local angle.
+Do not default to globally famous English-language names unless they were covered in this country's outlet corpus.
+
+Country scope rule:
+Rank by coverage from outlets based in {COUNTRY} — i.e., where the publisher itself is located — not by whether a given story is specifically about {COUNTRY}. An outlet based in {COUNTRY} covering a purely international story still counts fully toward {COUNTRY}'s coverage. Apply this identically in both the Current and Baseline Windows.
+Count local outlets and local headlines only. Do not include foreign-outlet coverage in either window's count.
+
+Anti-bias rule:
+Use {COUNTRY} and the language table above to set scope. Do not use my account location, IP address, interface language, or physical location.
+
+Pass 0 — build a local source list yourself
+Before ranking, identify 10–15 sources for this run:
+- major national newspapers and broadcasters in {COUNTRY}
+- widely read digital news sites in {COUNTRY}
+- category trade press for {CATEGORY} in {COUNTRY}
+- country domains such as the ccTLD of {COUNTRY}
+Write the source list in Method. Then search those sources. Do not wait for me to supply outlets.
+
+Search:
+1) Discover candidates from the CURRENT WINDOW ONLY:
+   a) {CATEGORY} + {COUNTRY} + Current Window, in English
+   b) the same query in each language from the mapping table above
+   c) {CATEGORY} + Current Window restricted to that country's domains/outlets from Pass 0
+   d) event-type queries (awards, launches, releases, matches, festivals, rankings, recalls, openings, deaths)
+   Collect 15–25 candidate entities. Surging entities are discovered from what's active now among local outlets — the baseline check happens after.
+2) For each promising candidate, search twice — once restricted to the Current Window, once restricted to the Baseline Window:
+   - local/original name + that window
+   - English name + that window
+   - name + country domain or a Pass 0 outlet + that window
+   Open matching articles. Do not skip the Baseline Window search; a candidate with no baseline data point has no surge score.
+3) International on-topic coverage (either window): search the same entities in major international outlets only when the article is about that {COUNTRY} entity or {COUNTRY}'s {CATEGORY} scene. Put these in International retrieved for that window. This is reported for reference only — not included in either window's count.
+
+Retrieval:
+Rank from the articles and headlines you actually retrieved in each window. Do not invent an index-wide total for either window.
+If a window's set is thin, say how many you inspected and why. Do not stop the search early just to write Limits.
+
+Eligible articles:
+Count news reports, features, interviews, reviews, recaps, explainers, trade-press stories, and dated newsroom/press articles.
+Local news portals and publisher sites may be counted.
+Do not count Google, Bing, Yahoo, or other search-engine result pages.
+Do not count Wikipedia, social-media posts, search-result snippets, tag pages, stock pages, or search-engine homepages.
+
+What to count — PER WINDOW (do this separately for Current and Baseline):
+Local retrieved = distinct qualifying articles you inspected that:
+- were published inside that window
+- come from outlets in {COUNTRY} or that country's domains
+- name the entity anywhere in the article (headline, lead, or body). Count each article once, even if the entity is mentioned several times.
+
+International retrieved = distinct qualifying on-topic international articles you inspected inside that same window. Reference only — not included in either window's count.
+
+Additional headlines seen = extra matching headlines from outlets based in {COUNTRY} or that country's domains, found in search results inside that window, that you did not open. Count only real local headlines you saw. Do not use a search engine's "About X results" figure. Do not add headlines from foreign outlets to this count.
+
+Current Window Count = Local retrieved + Additional headlines seen, for the Current Window only. International retrieved is NOT included.
+Baseline Window Count = Local retrieved + Additional headlines seen, for the Baseline Window only. International retrieved is NOT included.
+
+Surge calculation (multiple, not percentage):
+This is a 7-day vs prior 7-day surge among {COUNTRY} outlets, not a 24-hour surge.
+- If Baseline Window Count >= 1: Surge = Current Window Count / Baseline Window Count. Report as a multiple (e.g. 8.75x). Round to 2 decimal places.
+- If Baseline Window Count = 0 and Current Window Count > 0: this is a New entrant. Do not invent a huge multiple. Label Surge as "New" and apply a floor of Baseline = 1 only for ranking order, so its effective multiple equals its Current Window Count. Do not place New entrants above established entities solely because their baseline is zero; rank them by that floored multiple alongside everyone else, and mark them clearly as New in the table.
+- If both windows are 0, do not include the entity.
+
+Syndication:
+Count every published copy. Do not collapse wire reprints or mirrored copies to 1. Each outlet copy is a separate article. Apply this identically in both windows.
+A local outlet that uses its own headline or adds reporting still counts as its own article.
+
+Do not estimate pages you never saw.
+Do not invent an index-wide total for either window.
+
+Entity rules:
+Allowed types: Organization, Person, Product, Event, Place, Topic.
+Prefer named entities over vague topics.
+Report the entity itself (e.g. "Honda"), not a headline-style phrase (e.g. not "Honda head-gasket warranty extension") — put the story in the Driver column instead.
+Merge aliases, translations, and transliterations.
+Local/original name first, English in parentheses when useful.
+Do not rank countries, cities, or regions as the entity unless that place is itself the cultural/commercial product being covered.
+
+Always write this first:
+1) Coverage: country, languages, Pass 0 outlets, English-share, both exact UTC date windows used
+2) Method: queries, entity-name searches, articles inspected in each window, syndication rule used, surge formula used
+3) Limits: paywalls, missed languages, how many articles you actually inspected in each window, any New-entity baseline notes
+
+Then return this table:
+
+Rank | Entity Name | Entity Type | Surge (multiple) | Current Window Count | Baseline Window Count | International Coverage (reference only, NOT included in either window's count) | Example outlets | Example article URLs | Driver
+
+Table rules:
+- Rank by Surge (multiple), highest first. New entrants use the floored multiple (Current / 1) and are marked "New" in the Surge column (e.g. "213x (New)").
+- Current Window Count and Baseline Window Count are each Local retrieved + Additional headlines seen (local outlets / local headlines only) for that window. International retrieved is excluded from both and reported in its own column instead.
+- All count columns must be integers, multiples (e.g. 8.75x), or "not available".
+- Give at least 1 in-window (Current Window) article URL per row when you have one; 2 when available. An entity may still be listed if you have in-window headlines you actually saw but no opened URL. Write "not available" in the URL column. Do not drop the entity for lack of a URL. Do not invent a URL.
+- Driver: one line on what drove the surge.`;
+
 const REDDIT_WORLDWIDE = `Search Reddit for discussion of {CATEGORY} worldwide, posted in the 7 complete UTC days ending yesterday (today is excluded, since it is not yet a complete day). Before doing anything else, determine today's actual date in UTC, then calculate that exact 7-day window — (today's UTC date minus 7 days) through (today's UTC date minus 1 day), inclusive — and state that UTC date range at the very top of your answer.
 
 IMPORTANT — ignore my location entirely for this task. Do not default to English-language or my-region subreddits. Actively search across subreddits from multiple regions and languages, using these as starting anchors (not an exhaustive list): r/worldnews, r/de (German), r/france (French), r/japan (Japanese), r/india (Hindi/English), r/brasil (Portuguese), r/mexico (Spanish), r/unitedkingdom, r/canada, r/sweden (Swedish), r/finland (Finnish), r/netherlands (Dutch), plus the relevant category-specific subreddit in each language/region where one exists.
@@ -701,6 +944,8 @@ fillSelectPlain("location", LOCATIONS);
 const platformSel = document.getElementById("platform");
 const categorySel = document.getElementById("category");
 const locationSel = document.getElementById("location");
+const metricSel = document.getElementById("metric");
+const metricFieldWrap = document.getElementById("metricFieldWrap");
 const badgesEl = document.getElementById("badges");
 const promptOut = document.getElementById("promptOut");
 const promptNote = document.getElementById("promptNote");
@@ -753,6 +998,17 @@ function render() {
   toolBadge.textContent = "Tool: " + platform.tool;
   badgesEl.appendChild(toolBadge);
 
+  const isCuratedNews = platform.id === "curated_news";
+  metricFieldWrap.style.display = isCuratedNews ? "grid" : "none";
+  if (isCuratedNews) {
+    const metricBadge = document.createElement("span");
+    metricBadge.className = "badge tool";
+    metricBadge.style.background = metricSel.value === "surge" ? "#FFF3CD" : "#EEF2F6";
+    metricBadge.style.color = metricSel.value === "surge" ? "#7A5C00" : "#3A4854";
+    metricBadge.textContent = "Metric: " + (metricSel.value === "surge" ? "Surge (current vs. baseline week)" : "Volume (raw count)");
+    badgesEl.appendChild(metricBadge);
+  }
+
   if (platform.worldwideOnly) {
     const scopeBadge = document.createElement("span");
     scopeBadge.className = "badge tool";
@@ -777,7 +1033,11 @@ function render() {
   copyBtn.textContent = "Copy prompt";
 
   let template;
-  if (platform.id === "curated_news") template = isWorldwide ? CURATED_NEWS_WORLDWIDE : CURATED_NEWS_COUNTRY;
+  if (platform.id === "curated_news") {
+    const isSurge = metricSel.value === "surge";
+    if (isSurge) template = isWorldwide ? CURATED_NEWS_WORLDWIDE_SURGE : CURATED_NEWS_COUNTRY_SURGE;
+    else template = isWorldwide ? CURATED_NEWS_WORLDWIDE : CURATED_NEWS_COUNTRY;
+  }
   else if (platform.id === "reddit") template = REDDIT_WORLDWIDE;
   else if (platform.id === "facebook" || platform.id === "instagram") template = isWorldwide ? META_WORLDWIDE : META_COUNTRY;
   else if (platform.id === "x") template = isWorldwide ? GROK_WORLDWIDE : GROK_COUNTRY;
@@ -799,7 +1059,7 @@ function render() {
 }
 
 platformSel.addEventListener("change", () => { updateLocationDropdown(); render(); });
-[categorySel, locationSel].forEach(el => el.addEventListener("change", render));
+[categorySel, locationSel, metricSel].forEach(el => el.addEventListener("change", render));
 
 copyBtn.addEventListener("click", () => {
   navigator.clipboard.writeText(promptOut.textContent).then(() => {
